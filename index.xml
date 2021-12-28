@@ -6,7 +6,27 @@
     <description>Recent content on My New Hugo Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 26 Dec 2021 12:14:33 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 26 Dec 2021 14:53:26 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>聚合</title>
+      <link>https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/</link>
+      <pubDate>Sun, 26 Dec 2021 14:53:26 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/</guid>
+      <description>聚合语法 #  { &amp;#34;size&amp;#34;: 0, &amp;#34;aggs&amp;#34;: { // 与query同级的关键词  &amp;#34;&amp;lt;aggs_name&amp;gt;&amp;#34;: { // 自定义的聚合名字  &amp;#34;&amp;lt;aggs_type&amp;gt;&amp;#34;: { // 聚合的定义：不同的Type + Body  &amp;lt;aggs_body&amp;gt; }, &amp;#34;aggs&amp;#34;: {} // 子聚合查询  }, &amp;#34;&amp;lt;aggs_name_2&amp;gt;&amp;#34; : {} // 可以包含多个同级的聚合查询  } } Metric #   一些系列的统计方法，会基于数据集计算结果，除了支持在字段上进行计算，同样也支持在脚本（painless script）产生的结果之上进行计算，类比SQL中的max、min等函数。
+   单值分析：只输出一个分析结果
+   aggs_type 含义     min 最小值   max 最大值   avg 平均值   sum 求和   cardinality 去重求数量，相当于distinct count      多值分析</description>
+    </item>
+    
+    <item>
+      <title>搜索</title>
+      <link>https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/</link>
+      <pubDate>Sun, 26 Dec 2021 14:53:16 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/</guid>
+      <description></description>
+    </item>
+    
     <item>
       <title>分布式原理</title>
       <link>https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/</link>
