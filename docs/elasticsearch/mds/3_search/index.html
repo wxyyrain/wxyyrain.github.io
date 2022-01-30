@@ -1,0 +1,1367 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="基于词项和基于全文搜索 #  基于Term的查询 #   Term是表达语义的最小单位，在Elasticsearch中，Term查询，对输入不做分词。会将输入作为一个整体，在倒排索引中查找准确的词项，并且使用相关度算分公式，为每个包含该词项的文档进行相关度算分。
+  准确查询不需要算分，可以通过 Constant Score 将查询转换成一个Filtering，避免算分，并利用缓存，提高性能。
+   Constant Score
+{ &#34;query&#34;: { &#34;constant_score&#34;: { &#34;filter&#34;: { &#34;term&#34;: { &#34;field&#34;: &#34;&#34; } } } } }   一些TermLevelQuery
+ Term Query（精确查询） Range Query（范围查询） Exists Query（存在查询） Prefix Query（前缀查询） Wildcard Query（通配符查询）    基于全文的查询 #   索引和搜索时都会进行分词，查询字符串先传递到一个合适的分词器，然后生成一个共查询的词项列表。
+查询的时候，会先对输入的查询进行分词，然后每个词项逐个进行底层的查询，最终将结果进行合并，并为每个文档生成一个算分。
+ 如下，查 “Matrix reloaded”，会查到包括Matrix或者reload的所有结果。
+ 一些全文Query  Match Query Match Phrase Query Query String Query    查询结果比较 #  假设有一条文档：{ &ldquo;productID&rdquo; : &ldquo;XHDK-A-1293-#fJ3&rdquo;,&ldquo;desc&rdquo;:&ldquo;iPhone&rdquo; }，desc字段是text类型，desc.">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="搜索" />
+<meta property="og:description" content="基于词项和基于全文搜索 #  基于Term的查询 #   Term是表达语义的最小单位，在Elasticsearch中，Term查询，对输入不做分词。会将输入作为一个整体，在倒排索引中查找准确的词项，并且使用相关度算分公式，为每个包含该词项的文档进行相关度算分。
+  准确查询不需要算分，可以通过 Constant Score 将查询转换成一个Filtering，避免算分，并利用缓存，提高性能。
+   Constant Score
+{ &#34;query&#34;: { &#34;constant_score&#34;: { &#34;filter&#34;: { &#34;term&#34;: { &#34;field&#34;: &#34;&#34; } } } } }   一些TermLevelQuery
+ Term Query（精确查询） Range Query（范围查询） Exists Query（存在查询） Prefix Query（前缀查询） Wildcard Query（通配符查询）    基于全文的查询 #   索引和搜索时都会进行分词，查询字符串先传递到一个合适的分词器，然后生成一个共查询的词项列表。
+查询的时候，会先对输入的查询进行分词，然后每个词项逐个进行底层的查询，最终将结果进行合并，并为每个文档生成一个算分。
+ 如下，查 “Matrix reloaded”，会查到包括Matrix或者reload的所有结果。
+ 一些全文Query  Match Query Match Phrase Query Query String Query    查询结果比较 #  假设有一条文档：{ &ldquo;productID&rdquo; : &ldquo;XHDK-A-1293-#fJ3&rdquo;,&ldquo;desc&rdquo;:&ldquo;iPhone&rdquo; }，desc字段是text类型，desc." />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2021-12-26T14:53:16+08:00" />
+<meta property="article:modified_time" content="2021-12-26T14:53:16+08:00" />
+
+<title>搜索 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.66f77fe6d3d527a8b25a956c6f38abbc8b2fc882f63bc32f784bafc5f05a15b0.js" integrity="sha256-Zvd/5tPVJ6iyWpVsbzirvIsvyIL2O8MveEuvxfBaFbA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class=" active">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>MySQL</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/0_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Distribute</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>搜索</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#基于词项和基于全文搜索">基于词项和基于全文搜索</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#query--filtering">Query &amp; Filtering</a></li>
+    <li><a href="#bool-query">Bool Query</a></li>
+    <li><a href="#boosting--boosting-query">Boosting &amp; Boosting Query</a></li>
+    <li><a href="#disjunction-max-query">Disjunction Max Query</a></li>
+    <li><a href="#multimatch">MultiMatch</a></li>
+    <li><a href="#function-score-query">Function Score Query</a></li>
+    <li><a href="#suggester">Suggester</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#使用别名">使用别名</a></li>
+    <li><a href="#search-templage">Search Templage</a></li>
+    <li><a href="#配置跨集群搜索">配置跨集群搜索</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="基于词项和基于全文搜索">
+  基于词项和基于全文搜索
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8e%e8%af%8d%e9%a1%b9%e5%92%8c%e5%9f%ba%e4%ba%8e%e5%85%a8%e6%96%87%e6%90%9c%e7%b4%a2">#</a>
+</h2>
+<h4 id="基于term的查询">
+  基于Term的查询
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8eterm%e7%9a%84%e6%9f%a5%e8%af%a2">#</a>
+</h4>
+<blockquote>
+<p>Term是表达语义的最小单位，在Elasticsearch中，Term查询，对输入不做分词。会将输入作为一个整体，在倒排索引中查找准确的词项，并且使用相关度算分公式，为每个包含该词项的文档进行相关度算分。</p>
+</blockquote>
+<blockquote>
+<p>准确查询不需要算分，可以通过 Constant Score 将查询转换成一个Filtering，避免算分，并利用缓存，提高性能。</p>
+</blockquote>
+<ul>
+<li>
+<p>Constant Score</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;constant_score&#34;</span>: {
+      <span style="color:#f92672">&#34;filter&#34;</span>: {
+        <span style="color:#f92672">&#34;term&#34;</span>: {
+          <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;&#34;</span>
+        }
+      }
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>一些TermLevelQuery</p>
+<ul>
+<li>Term Query（精确查询）</li>
+<li>Range Query（范围查询）</li>
+<li>Exists Query（存在查询）</li>
+<li>Prefix Query（前缀查询）</li>
+<li>Wildcard Query（通配符查询）</li>
+</ul>
+</li>
+</ul>
+<h4 id="基于全文的查询">
+  基于全文的查询
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8e%e5%85%a8%e6%96%87%e7%9a%84%e6%9f%a5%e8%af%a2">#</a>
+</h4>
+<blockquote>
+<p>索引和搜索时都会进行分词，查询字符串先传递到一个合适的分词器，然后生成一个共查询的词项列表。</p>
+<p>查询的时候，会先对输入的查询进行分词，然后每个词项逐个进行底层的查询，最终将结果进行合并，并为每个文档生成一个算分。</p>
+</blockquote>
+<p>如下，查 “Matrix reloaded”，会查到包括Matrix或者reload的所有结果。</p>
+<p><img src="/images/es_pic/search1.png" alt="" /></p>
+<ul>
+<li>一些全文Query
+<ul>
+<li>Match Query</li>
+<li>Match Phrase Query</li>
+<li>Query String Query</li>
+</ul>
+</li>
+</ul>
+<h4 id="查询结果比较">
+  查询结果比较
+  <a class="anchor" href="#%e6%9f%a5%e8%af%a2%e7%bb%93%e6%9e%9c%e6%af%94%e8%be%83">#</a>
+</h4>
+<p>假设有一条文档：{ &ldquo;productID&rdquo; : &ldquo;XHDK-A-1293-#fJ3&rdquo;,&ldquo;desc&rdquo;:&ldquo;iPhone&rdquo; }，desc字段是text类型，desc.keyword是keyword类型。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;term&#34;</span>: {
+      <span style="color:#f92672">&#34;desc&#34;</span>: {
+<span style="color:#75715e">// 查不到
+</span><span style="color:#75715e"></span>        <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#e6db74">&#34;iPhone&#34;</span>
+<span style="color:#75715e">// 可以查到
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// &#34;value&#34;:&#34;iphone&#34;
+</span><span style="color:#75715e"></span>      }
+    }
+  }
+}
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;term&#34;</span>: {
+      <span style="color:#f92672">&#34;desc.keyword&#34;</span>: {
+<span style="color:#75715e">// 可以查到
+</span><span style="color:#75715e"></span>        <span style="color:#75715e">// &#34;value&#34;: &#34;iPhone&#34;
+</span><span style="color:#75715e">// 查不到
+</span><span style="color:#75715e"></span>        <span style="color:#f92672">&#34;value&#34;</span>:<span style="color:#e6db74">&#34;iphone&#34;</span>
+      }
+    }
+  }
+}
+<span style="color:#75715e">// 查询keyword类型字段时，就算使用match也不会分词
+</span><span style="color:#75715e"></span>{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;match&#34;</span>: {
+<span style="color:#75715e">// 可以查到
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">&#34;desc.keyword&#34;</span>: <span style="color:#e6db74">&#34;iPhone&#34;</span>
+<span style="color:#75715e">// 查不到
+</span><span style="color:#75715e"></span>        <span style="color:#e6db74">&#34;desc.keyword&#34;</span>:<span style="color:#e6db74">&#34;iphone&#34;</span>
+    }
+  }
+}
+</code></pre></div><h2 id="query--filtering">
+  Query &amp; Filtering
+  <a class="anchor" href="#query--filtering">#</a>
+</h2>
+<p>ES中的查询分为：</p>
+<ul>
+<li>Query Context：相关性算分</li>
+<li>Filter Context：不需要算分（yes or no），可以利用cache，获得更好的性能</li>
+</ul>
+<h2 id="bool-query">
+  Bool Query
+  <a class="anchor" href="#bool-query">#</a>
+</h2>
+<blockquote>
+<p>多条件查询可以使用bool查询。一个bool查询，是一个或者多个查询子句的组合，总共包括4种子句，其中2种会影响算分，2种不影响算分。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>子语句</th>
+<th>是否算分</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>must</td>
+<td>必须匹配。贡献算分</td>
+</tr>
+<tr>
+<td>should</td>
+<td>选择性匹配。贡献算分</td>
+</tr>
+<tr>
+<td>must_not</td>
+<td>Filter Context 查询子句，必须不能匹配</td>
+</tr>
+<tr>
+<td>filter</td>
+<td>Filter Context 必须匹配，但是不贡献算分</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>另外，相关性并不只是全文本检索的专利。也适用于yes | no的子句，匹配的子句越多，相关性评分越高。如果多条查询子句被合并为一条复合查询语句，比如bool 查询，则每个查询子句计算得出的评分会被合并到总的相关性评分中。</p>
+</blockquote>
+<p>bool查询中：</p>
+<ul>
+<li>
+<p>子查询可以任意顺序出现</p>
+</li>
+<li>
+<p>可以嵌套多个查询</p>
+<ul>
+<li>
+<p>改变权重</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 同一层级下单竞争字段，具有相同的权重
+</span><span style="color:#75715e">// brown red quick dog有相同权重
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/animals/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;bool&#34;</span>: {
+      <span style="color:#f92672">&#34;should&#34;</span>: [
+        { <span style="color:#f92672">&#34;term&#34;</span>: { <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;brown&#34;</span> }},
+        { <span style="color:#f92672">&#34;term&#34;</span>: { <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;red&#34;</span> }},
+        { <span style="color:#f92672">&#34;term&#34;</span>: { <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;quick&#34;</span>   }},
+        { <span style="color:#f92672">&#34;term&#34;</span>: { <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;dog&#34;</span>   }}
+      ]
+    }
+  }
+}
+<span style="color:#75715e">// 通过嵌套bool查询，可以改变对算分的影响
+</span><span style="color:#75715e">// red和brown加起来，和上面的才有相同的权重
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/animals/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;bool&#34;</span>: {
+      <span style="color:#f92672">&#34;should&#34;</span>: [
+        { <span style="color:#f92672">&#34;term&#34;</span>: { <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;quick&#34;</span> }},
+        { <span style="color:#f92672">&#34;term&#34;</span>: { <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;dog&#34;</span>   }},
+        {
+          <span style="color:#f92672">&#34;bool&#34;</span>:{
+            <span style="color:#f92672">&#34;should&#34;</span>:[
+               { <span style="color:#f92672">&#34;term&#34;</span>: { <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;red&#34;</span> }},
+                 { <span style="color:#f92672">&#34;term&#34;</span>: { <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;brown&#34;</span> }}
+            ]
+          }
+
+        }
+      ]
+    }
+  }
+}
+</code></pre></div></li>
+</ul>
+</li>
+<li>
+<p>如果bool查询中，没有must条件，should中必须至少满足一条查询</p>
+</li>
+<li>
+<p>should 算分过程</p>
+<blockquote>
+<ul>
+<li>查询should语句中的两个查询；</li>
+<li>加和两个查询的评分；</li>
+<li>乘以匹配语句的总数；</li>
+<li>除以所有总语句数。</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<h2 id="boosting--boosting-query">
+  Boosting &amp; Boosting Query
+  <a class="anchor" href="#boosting--boosting-query">#</a>
+</h2>
+<ul>
+<li>
+<p>Boosting</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 通过boost调整算分
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;bool&#34;</span>: {
+      <span style="color:#f92672">&#34;should&#34;</span>: [
+        {<span style="color:#f92672">&#34;match&#34;</span>: {
+          <span style="color:#f92672">&#34;title&#34;</span>: {
+            <span style="color:#f92672">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;apple,ipad&#34;</span>,
+            <span style="color:#f92672">&#34;boost&#34;</span>: <span style="color:#ae81ff">1.1</span>
+          }
+        }},
+
+        {<span style="color:#f92672">&#34;match&#34;</span>: {
+          <span style="color:#f92672">&#34;content&#34;</span>: {
+            <span style="color:#f92672">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;apple,ipad&#34;</span>,
+            <span style="color:#f92672">&#34;boost&#34;</span>:<span style="color:#ae81ff">2</span>
+          }
+        }}
+      ]
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>Boosting Query</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// pie内容的数据往后排
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">news/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;boosting&#34;</span>: {
+      <span style="color:#f92672">&#34;positive&#34;</span>: {
+        <span style="color:#f92672">&#34;match&#34;</span>: {
+          <span style="color:#f92672">&#34;content&#34;</span>: <span style="color:#e6db74">&#34;apple&#34;</span>
+        }
+      },
+      <span style="color:#f92672">&#34;negative&#34;</span>: {
+        <span style="color:#f92672">&#34;match&#34;</span>: {
+          <span style="color:#f92672">&#34;content&#34;</span>: <span style="color:#e6db74">&#34;pie&#34;</span>
+        }
+      },
+      <span style="color:#f92672">&#34;negative_boost&#34;</span>: <span style="color:#ae81ff">0.5</span>
+    }
+  }
+}
+</code></pre></div></li>
+</ul>
+<h2 id="disjunction-max-query">
+  Disjunction Max Query
+  <a class="anchor" href="#disjunction-max-query">#</a>
+</h2>
+<blockquote>
+<p>单字段多字符串查询</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/blogs/_search</span>
+{
+    <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;bool&#34;</span>: {
+            <span style="color:#f92672">&#34;should&#34;</span>: [
+                { <span style="color:#f92672">&#34;match&#34;</span>: { <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;Brown fox&#34;</span> }},
+                { <span style="color:#f92672">&#34;match&#34;</span>: { <span style="color:#f92672">&#34;body&#34;</span>:  <span style="color:#e6db74">&#34;Brown fox&#34;</span> }}
+            ]
+        }
+    }
+}
+</code></pre></div><blockquote>
+<p>上面例子中，title与body相互竞争，不应该将分数简单叠加，而是应该找到单个最佳匹配字段的评分。</p>
+</blockquote>
+<blockquote>
+<p>Disjunction Max Query是将任何与任一查询匹配的文档作为结果返回。采用字段上最匹配的评分最终评分返回。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 使用一个字段上的最高评分作为最终评分
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">blogs/_search</span>
+{
+    <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;dis_max&#34;</span>: {
+            <span style="color:#f92672">&#34;queries&#34;</span>: [
+                { <span style="color:#f92672">&#34;match&#34;</span>: { <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;Brown fox&#34;</span> }},
+                { <span style="color:#f92672">&#34;match&#34;</span>: { <span style="color:#f92672">&#34;body&#34;</span>:  <span style="color:#e6db74">&#34;Brown fox&#34;</span> }}
+            ]
+        }
+    }
+}
+</code></pre></div><blockquote>
+<p>Tie Breaker是一个介于0到1之间的浮点数，0代表使用最佳匹配，1代表所有语句同样重要。</p>
+<p>通过Tie Breaker参数调整：</p>
+<ul>
+<li>获得最佳匹配语句的评分；</li>
+<li>将其他匹配语句的评分与tie_breaker相乘；</li>
+<li>对以上评分求和并规范化。</li>
+</ul>
+</blockquote>
+<h2 id="multimatch">
+  MultiMatch
+  <a class="anchor" href="#multimatch">#</a>
+</h2>
+<p>单字符串多字段查询三种场景：</p>
+<ul>
+<li>
+<p>最佳字段（Best Fields）</p>
+<blockquote>
+<p>当字段之间相互竞争，又相互关联。例如title 和body 这样的字段。评分来自最匹配字段。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// Best Fields是默认类型，可以不用指定；Minimum should match等参数可以传递到生成的query中。
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;multi_match&#34;</span>: {
+      <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;best_fields&#34;</span>,
+      <span style="color:#f92672">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;Quick pets&#34;</span>,
+      <span style="color:#f92672">&#34;fields&#34;</span>: [<span style="color:#e6db74">&#34;title&#34;</span>,<span style="color:#e6db74">&#34;body&#34;</span>],
+      <span style="color:#f92672">&#34;tie_breaker&#34;</span>: <span style="color:#ae81ff">0.2</span>,
+      <span style="color:#f92672">&#34;minimum_should_match&#34;</span>: <span style="color:#e6db74">&#34;20%&#34;</span>
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>多数字段（Most Fields）</p>
+<blockquote>
+<p>处理英文内容时，一种常见的手段是，在主字段（English Analyzer），抽取词干，加入同义词，以匹配更多文档。相同的文本，加入子字段（Standard Analyzer），以提供更加精确的匹配。其他字段作为匹配文档提高相关度的信号。匹配字段越多越好。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">/titles</span>
+{
+  <span style="color:#f92672">&#34;mappings&#34;</span>: {
+    <span style="color:#f92672">&#34;properties&#34;</span>: {
+      <span style="color:#f92672">&#34;title&#34;</span>: {
+        <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;text&#34;</span>,
+        <span style="color:#f92672">&#34;analyzer&#34;</span>: <span style="color:#e6db74">&#34;english&#34;</span>,
+        <span style="color:#f92672">&#34;fields&#34;</span>: {<span style="color:#f92672">&#34;std&#34;</span>: {<span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;text&#34;</span>,<span style="color:#f92672">&#34;analyzer&#34;</span>: <span style="color:#e6db74">&#34;standard&#34;</span>}}
+      }
+    }
+  }
+}
+
+<span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">/titles/_search</span>
+{
+   <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;multi_match&#34;</span>: {
+            <span style="color:#f92672">&#34;query&#34;</span>:  <span style="color:#e6db74">&#34;barking dogs&#34;</span>,
+            <span style="color:#f92672">&#34;type&#34;</span>:   <span style="color:#e6db74">&#34;most_fields&#34;</span>,
+            <span style="color:#f92672">&#34;fields&#34;</span>: [ <span style="color:#e6db74">&#34;title&#34;</span>, <span style="color:#e6db74">&#34;title.std&#34;</span> ]
+        }
+    }
+}
+</code></pre></div></li>
+<li>
+<p>混合字段（Cross Field）</p>
+<blockquote>
+<p>对于某些实体，例如人名、地址、图书信息。需要在多个字段中确定信息，单个字段只能作为整体的一部分。希望在任何这些列出的字段中找到尽可能多的词。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">/titles/_search</span>
+{
+   <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;multi_match&#34;</span>: {
+            <span style="color:#f92672">&#34;query&#34;</span>:  <span style="color:#e6db74">&#34;barking dogs road&#34;</span>,
+            <span style="color:#f92672">&#34;type&#34;</span>:   <span style="color:#e6db74">&#34;cross_fields&#34;</span>,
+            <span style="color:#f92672">&#34;operator&#34;</span>: <span style="color:#e6db74">&#34;and&#34;</span>, 
+            <span style="color:#f92672">&#34;fields&#34;</span>: [ <span style="color:#e6db74">&#34;title&#34;</span> ]
+        }
+    }
+}
+</code></pre></div></li>
+</ul>
+<h2 id="function-score-query">
+  Function Score Query
+  <a class="anchor" href="#function-score-query">#</a>
+</h2>
+<blockquote>
+<p>可以在查询结束后，对每一个匹配的文档进行一系列的重新算分，根据新生成的分数进行排序。</p>
+</blockquote>
+<p>提供了几种默认的计算分值的函数：</p>
+<ol>
+<li>Weight：为每一个文档设置一个简单而不被规范化的权重</li>
+<li>Field Value Factor：使用该数值来修改_score，例如将&quot;热度&quot;和&quot;点赞数&quot;作为算分的参考要素</li>
+<li>Randow Score：为每一个用户使用一个不同的，随机算分结果</li>
+<li>衰减函数：以某个字段的值为标准，距离某个值越近，得分越高</li>
+<li>Script Score：自定义脚本完全控制所需逻辑</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 按欢迎程度提升权重：搜索的评分作为排序的主要依据，同时votes多的靠前。
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;function_score&#34;</span>: {
+      <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;multi_match&#34;</span>: {
+          <span style="color:#f92672">&#34;query&#34;</span>:    <span style="color:#e6db74">&#34;popularity&#34;</span>,
+          <span style="color:#f92672">&#34;fields&#34;</span>: [ <span style="color:#e6db74">&#34;title&#34;</span>, <span style="color:#e6db74">&#34;content&#34;</span> ]
+        }
+      },
+<span style="color:#75715e">// 新的算分 = 老的算分 * 投票数
+</span><span style="color:#75715e">// 票数为0或者票数很大的时候差异很大
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">&#34;field_value_factor&#34;</span>: {
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;votes&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div><ul>
+<li>
+<p>使用Modifier 平滑曲线</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;function_score&#34;</span>: {
+      <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;multi_match&#34;</span>: {
+          <span style="color:#f92672">&#34;query&#34;</span>:    <span style="color:#e6db74">&#34;popularity&#34;</span>,
+          <span style="color:#f92672">&#34;fields&#34;</span>: [ <span style="color:#e6db74">&#34;title&#34;</span>, <span style="color:#e6db74">&#34;content&#34;</span> ]
+        }
+      },
+<span style="color:#75715e">// 新的算分 = 老的算分 * log（1 + 投票数）
+</span><span style="color:#75715e">// 别的modifier：log、log2p、ln、ln1p、ln2p、square、sqrt、reciprocal
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">&#34;field_value_factor&#34;</span>: {
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;votes&#34;</span>,
+        <span style="color:#f92672">&#34;modifier&#34;</span>: <span style="color:#e6db74">&#34;log1p&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>引入Factor（曲线更平滑）</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;function_score&#34;</span>: {
+      <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;multi_match&#34;</span>: {
+          <span style="color:#f92672">&#34;query&#34;</span>:    <span style="color:#e6db74">&#34;popularity&#34;</span>,
+          <span style="color:#f92672">&#34;fields&#34;</span>: [ <span style="color:#e6db74">&#34;title&#34;</span>, <span style="color:#e6db74">&#34;content&#34;</span> ]
+        }
+      },
+<span style="color:#75715e">// 新的算分 = 老的算分 * log（1 + factor * 投票数）
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">&#34;field_value_factor&#34;</span>: {
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;votes&#34;</span>,
+        <span style="color:#f92672">&#34;modifier&#34;</span>: <span style="color:#e6db74">&#34;log1p&#34;</span> ,
+        <span style="color:#f92672">&#34;factor&#34;</span>: <span style="color:#ae81ff">0.1</span>
+      }
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>Boost Mode 和 Max Boost</p>
+<blockquote>
+<p>Boost Mode ：
+1.Multiply：算分与函数值的乘积；
+2.Sum：算分与函数值的和；
+3.Min/ Max：算分与函数取 最小/最大值；
+4.Replace：使用函数值取代算分。</p>
+<p>Max Boost 可以将算分控制在一个最大值。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;function_score&#34;</span>: {
+      <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;multi_match&#34;</span>: {
+          <span style="color:#f92672">&#34;query&#34;</span>:    <span style="color:#e6db74">&#34;popularity&#34;</span>,
+          <span style="color:#f92672">&#34;fields&#34;</span>: [ <span style="color:#e6db74">&#34;title&#34;</span>, <span style="color:#e6db74">&#34;content&#34;</span> ]
+        }
+      },
+      <span style="color:#f92672">&#34;field_value_factor&#34;</span>: {
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;votes&#34;</span>,
+        <span style="color:#f92672">&#34;modifier&#34;</span>: <span style="color:#e6db74">&#34;log1p&#34;</span> ,
+        <span style="color:#f92672">&#34;factor&#34;</span>: <span style="color:#ae81ff">0.1</span>
+      },
+      <span style="color:#f92672">&#34;boost_mode&#34;</span>: <span style="color:#e6db74">&#34;sum&#34;</span>,
+      <span style="color:#f92672">&#34;max_boost&#34;</span>: <span style="color:#ae81ff">3</span>
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>一致性随机函数</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;function_score&#34;</span>: {
+<span style="color:#75715e">// 不同seed值，返回结果算分不同
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">&#34;random_score&#34;</span>: {
+        <span style="color:#f92672">&#34;seed&#34;</span>: <span style="color:#ae81ff">911119</span>
+      }
+    }
+  }
+}
+</code></pre></div></li>
+</ul>
+<h2 id="suggester">
+  Suggester
+  <a class="anchor" href="#suggester">#</a>
+</h2>
+<blockquote>
+<p>现代的搜索引擎，一般提供Suggest as you type的功能。帮助用户在输入搜索过程中，进行自动补全或者纠错。通过协助用户输入更加精准的关键词，提高后续搜索阶段文档匹配的程度。</p>
+</blockquote>
+<blockquote>
+<p>搜索引擎中类似的功能，在Elasticsearch 中是通过Suggester API实现的。
+原理：将输入的文本分解为Token，然后在索引的字典里查找相似的Term 并返回。</p>
+</blockquote>
+<p>根据不同的适用场景，Elasticsearch 设计了4中类别的 Suggester：</p>
+<ul>
+<li>Term &amp; Phrase Suggester</li>
+<li>Complete &amp; Context Suggester</li>
+</ul>
+<h4 id="搜索建议">
+  搜索建议
+  <a class="anchor" href="#%e6%90%9c%e7%b4%a2%e5%bb%ba%e8%ae%ae">#</a>
+</h4>
+<ul>
+<li>
+<p>Term Suggester</p>
+<blockquote>
+<p>Suggester 就是一种特殊类型的搜索。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 每个建议都包含了一个算分，相似性是通过 Levenshtein Edit Distance 的算法实现的。
+</span><span style="color:#75715e">// 核心思想就是一个词改动多少字符就可以和另外一个词一致。提供了很多可选参数来控制相似性的模糊程度。例如“max_edits”
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/articles/_search</span>
+{
+  <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">1</span>,
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;match&#34;</span>: {
+      <span style="color:#f92672">&#34;body&#34;</span>: <span style="color:#e6db74">&#34;lucen rock&#34;</span>
+    }
+  },
+  <span style="color:#f92672">&#34;suggest&#34;</span>: {
+    <span style="color:#f92672">&#34;term-suggestion&#34;</span>: {
+<span style="color:#75715e">// text 里是调用时候提供的文本，通常来自用户输入的内容
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;lucen rock&#34;</span>,
+      <span style="color:#f92672">&#34;term&#34;</span>: {
+<span style="color:#75715e">// 当无法搜索到结果时（missing），返回建议的词
+</span><span style="color:#75715e"></span>        <span style="color:#f92672">&#34;suggest_mode&#34;</span>: <span style="color:#e6db74">&#34;missing&#34;</span>,
+<span style="color:#75715e">// 会到 指定的字段body 上搜索
+</span><span style="color:#75715e"></span>        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;body&#34;</span>,
+        <span style="color:#f92672">&#34;prefix_length&#34;</span>:<span style="color:#ae81ff">0</span>,
+        <span style="color:#f92672">&#34;sort&#34;</span>: <span style="color:#e6db74">&#34;frequency&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div><p>Suggestion Mode：</p>
+<ul>
+<li>
+<p>Missing - 如果索引中已经存在，就不提供建议；</p>
+</li>
+<li>
+<p>Popular - 推荐出现频率更加高的词；</p>
+</li>
+<li>
+<p>Always - 无论是否存在，都提供建议。</p>
+</li>
+<li>
+<p>Phrase Suggester</p>
+<blockquote>
+<p>Phrase Suggester 在 Term Suggester 上增加了一些额外的逻辑，例如一些参数：</p>
+<ul>
+<li>Suggest Mode：missing、popular；</li>
+<li>Max Errors：最多可以拼错的Terms 数；</li>
+<li>Confidence：限制返回结果数，默认为1。</li>
+</ul>
+</blockquote>
+</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/articles/_search</span>
+{
+  <span style="color:#f92672">&#34;suggest&#34;</span>: {
+    <span style="color:#f92672">&#34;my-suggestion&#34;</span>: {
+      <span style="color:#f92672">&#34;text&#34;</span>: <span style="color:#e6db74">&#34;lucne and elasticsear rock hello world &#34;</span>,
+      <span style="color:#f92672">&#34;phrase&#34;</span>: {
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;body&#34;</span>,
+        <span style="color:#f92672">&#34;max_errors&#34;</span>:<span style="color:#ae81ff">2</span>,
+        <span style="color:#f92672">&#34;confidence&#34;</span>:<span style="color:#ae81ff">0</span>,
+        <span style="color:#f92672">&#34;direct_generator&#34;</span>:[{
+          <span style="color:#f92672">&#34;field&#34;</span>:<span style="color:#e6db74">&#34;body&#34;</span>,
+          <span style="color:#f92672">&#34;suggest_mode&#34;</span>:<span style="color:#e6db74">&#34;always&#34;</span>
+        }],
+        <span style="color:#f92672">&#34;highlight&#34;</span>: {
+          <span style="color:#f92672">&#34;pre_tag&#34;</span>: <span style="color:#e6db74">&#34;&lt;em&gt;&#34;</span>,
+          <span style="color:#f92672">&#34;post_tag&#34;</span>: <span style="color:#e6db74">&#34;&lt;/em&gt;&#34;</span>
+        }
+      }
+    }
+  }
+}
+</code></pre></div></li>
+</ul>
+<h4 id="自动补全和基于上下文提示">
+  自动补全和基于上下文提示
+  <a class="anchor" href="#%e8%87%aa%e5%8a%a8%e8%a1%a5%e5%85%a8%e5%92%8c%e5%9f%ba%e4%ba%8e%e4%b8%8a%e4%b8%8b%e6%96%87%e6%8f%90%e7%a4%ba">#</a>
+</h4>
+<blockquote>
+<p>Completion Suggester 提供了“自动完成（Auto Complete）”的功能。用户每输入一个字符，就需要即时发送一个查询请求到后端查询匹配项；
+对性能要求比较苛刻。Elasticsearch 采用了不同的数据结构，并非通过倒排索引来完成。而是将 Analyze 的数据编码成 FST 和索引 一起存放。FST 会被 ES整个加载进内存，速度很快；
+FST 只能用于前缀查找。</p>
+</blockquote>
+<p>使用Completion Suggester 的一些步骤：</p>
+<ul>
+<li>
+<p>定义Mapping，使用“completion”type</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">articles</span>
+{
+  <span style="color:#f92672">&#34;mappings&#34;</span>: {
+    <span style="color:#f92672">&#34;properties&#34;</span>: {
+      <span style="color:#f92672">&#34;title_completion&#34;</span>:{
+        <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;completion&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>索引数据</p>
+</li>
+<li>
+<p>运行“suggest”查询，得到搜索建议</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 会返回 elk 开头的数据
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">articles/_search</span>
+{
+  <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">0</span>,
+  <span style="color:#f92672">&#34;suggest&#34;</span>: {
+    <span style="color:#f92672">&#34;article-suggester&#34;</span>: {
+      <span style="color:#f92672">&#34;prefix&#34;</span>: <span style="color:#e6db74">&#34;elk &#34;</span>,
+      <span style="color:#f92672">&#34;completion&#34;</span>: {
+        <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;title_completion&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div></li>
+</ul>
+<h4 id="context-suggester">
+  Context Suggester
+  <a class="anchor" href="#context-suggester">#</a>
+</h4>
+<blockquote>
+<p>Completion Suggester 的扩展，可以在搜索中加入更多的上下文信息，例如，输入“star”，</p>
+<ul>
+<li>咖啡相关：建议“Starbucks”；</li>
+<li>电影相关：“star wars”</li>
+</ul>
+</blockquote>
+<p>两种类型的 Context：</p>
+<ul>
+<li>Category - 任意的字符串；</li>
+<li>Geo - 地理位置信息。</li>
+</ul>
+<p>实现Context Suggester 的具体步骤：</p>
+<ul>
+<li>
+<p>定制一个Mapping</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">comments/_mapping</span>
+{
+  <span style="color:#f92672">&#34;properties&#34;</span>: {
+    <span style="color:#f92672">&#34;comment_autocomplete&#34;</span>:{
+      <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;completion&#34;</span>,
+<span style="color:#75715e">// 
+</span><span style="color:#75715e"></span>      <span style="color:#f92672">&#34;contexts&#34;</span>:[{
+        <span style="color:#f92672">&#34;type&#34;</span>:<span style="color:#e6db74">&#34;category&#34;</span>,
+        <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;comment_category&#34;</span>
+      }]
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>索引数据，并且为每个文档加入Context 信息</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 分类是电影
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">comments/_doc</span>
+{
+  <span style="color:#f92672">&#34;comment&#34;</span>:<span style="color:#e6db74">&#34;I love the star war movies&#34;</span>,
+  <span style="color:#f92672">&#34;comment_autocomplete&#34;</span>:{
+    <span style="color:#f92672">&#34;input&#34;</span>:[<span style="color:#e6db74">&#34;star wars&#34;</span>],
+    <span style="color:#f92672">&#34;contexts&#34;</span>:{
+      <span style="color:#f92672">&#34;comment_category&#34;</span>:<span style="color:#e6db74">&#34;movies&#34;</span>
+    }
+  }
+}
+<span style="color:#75715e">// 分类是咖啡
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">comments/_doc</span>
+{
+  <span style="color:#f92672">&#34;comment&#34;</span>:<span style="color:#e6db74">&#34;Where can I find a Starbucks&#34;</span>,
+  <span style="color:#f92672">&#34;comment_autocomplete&#34;</span>:{
+    <span style="color:#f92672">&#34;input&#34;</span>:[<span style="color:#e6db74">&#34;starbucks&#34;</span>],
+    <span style="color:#f92672">&#34;contexts&#34;</span>:{
+      <span style="color:#f92672">&#34;comment_category&#34;</span>:<span style="color:#e6db74">&#34;coffee&#34;</span>
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>结合Context 进行 Suggestion 查询</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 会查出咖啡类型的数据
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">comments/_search</span>
+{
+  <span style="color:#f92672">&#34;suggest&#34;</span>: {
+    <span style="color:#f92672">&#34;MY_SUGGESTION&#34;</span>: {
+      <span style="color:#f92672">&#34;prefix&#34;</span>: <span style="color:#e6db74">&#34;sta&#34;</span>,
+      <span style="color:#f92672">&#34;completion&#34;</span>:{
+        <span style="color:#f92672">&#34;field&#34;</span>:<span style="color:#e6db74">&#34;comment_autocomplete&#34;</span>,
+        <span style="color:#f92672">&#34;contexts&#34;</span>:{
+          <span style="color:#f92672">&#34;comment_category&#34;</span>:<span style="color:#e6db74">&#34;coffee&#34;</span>
+        }
+      }
+    }
+  }
+}
+</code></pre></div></li>
+</ul>
+<h4 id="比较">
+  比较
+  <a class="anchor" href="#%e6%af%94%e8%be%83">#</a>
+</h4>
+<ul>
+<li>精准度：
+Completion &gt; Phrase &gt; Term</li>
+<li>召回率
+Term &gt; Phrase &gt; Completion</li>
+<li>性能
+Completion &gt; Phrase &gt; Term</li>
+</ul>
+<h2 id="使用别名">
+  使用别名
+  <a class="anchor" href="#%e4%bd%bf%e7%94%a8%e5%88%ab%e5%90%8d">#</a>
+</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">#</span> <span style="color:#960050;background-color:#1e0010">可以添加过滤器</span>
+<span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">_aliases</span>
+{
+  <span style="color:#f92672">&#34;actions&#34;</span>: [
+    {
+      <span style="color:#f92672">&#34;add&#34;</span>: {
+        <span style="color:#f92672">&#34;index&#34;</span>: <span style="color:#e6db74">&#34;movies-2019&#34;</span>,
+        <span style="color:#f92672">&#34;alias&#34;</span>: <span style="color:#e6db74">&#34;movies-lastest-highrate&#34;</span>,
+        <span style="color:#f92672">&#34;filter&#34;</span>: {
+          <span style="color:#f92672">&#34;range&#34;</span>: {
+            <span style="color:#f92672">&#34;rating&#34;</span>: {
+              <span style="color:#f92672">&#34;gte&#34;</span>: <span style="color:#ae81ff">4</span>
+            }
+          }
+        }
+      }
+    }
+  ]
+}
+</code></pre></div><h2 id="search-templage">
+  Search Templage
+  <a class="anchor" href="#search-templage">#</a>
+</h2>
+<ul>
+<li>
+<p>新建一个Search Templage</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">_scripts/tmdb</span>
+{
+  <span style="color:#f92672">&#34;script&#34;</span>: {
+    <span style="color:#f92672">&#34;lang&#34;</span>: <span style="color:#e6db74">&#34;mustache&#34;</span>,
+    <span style="color:#f92672">&#34;source&#34;</span>: {
+      <span style="color:#f92672">&#34;_source&#34;</span>: [
+        <span style="color:#e6db74">&#34;title&#34;</span>
+      ],
+      <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">20</span>,
+      <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;multi_match&#34;</span>: {
+          <span style="color:#f92672">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;{{q}}&#34;</span>,
+          <span style="color:#f92672">&#34;fields&#34;</span>: [<span style="color:#e6db74">&#34;title&#34;</span>]
+        }
+      }
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>查询Search Templage</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">_scripts/tmdb</span>
+</code></pre></div></li>
+<li>
+<p>使用 Search Templage</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">titles/_search/template</span>
+{
+    <span style="color:#f92672">&#34;id&#34;</span>:<span style="color:#e6db74">&#34;tmdb&#34;</span>,
+    <span style="color:#f92672">&#34;params&#34;</span>: {
+        <span style="color:#f92672">&#34;q&#34;</span>: <span style="color:#e6db74">&#34;barking&#34;</span>
+    }
+}
+</code></pre></div></li>
+</ul>
+<h2 id="配置跨集群搜索">
+  配置跨集群搜索
+  <a class="anchor" href="#%e9%85%8d%e7%bd%ae%e8%b7%a8%e9%9b%86%e7%be%a4%e6%90%9c%e7%b4%a2">#</a>
+</h2>
+<h4 id="水平扩展痛点">
+  水平扩展痛点
+  <a class="anchor" href="#%e6%b0%b4%e5%b9%b3%e6%89%a9%e5%b1%95%e7%97%9b%e7%82%b9">#</a>
+</h4>
+<blockquote>
+<p>单集群 - 当水平扩展时，节点数不能无限增加，因为当集群的 meta 信息（节点，索引，集群状态）过多，会导致更新压力变大，单个Active Master 会成为性能瓶颈，导致整个集群无法正常工作。</p>
+</blockquote>
+<p>早期版本，通过Tribe Node 可以实现多集群访问的需求，但还存在一定的问题：</p>
+<ul>
+<li>Tribe Node 会以 Client Node 的方式加入每个集群。集群中Master 节点的任务变更需要 Tribe Node 的回应才能继续；</li>
+<li>Tribe Node 不保存Cluster State 的信息，一旦重启，初始化很慢；</li>
+<li>当多个集群存在索引重名的情况时，只能设置一种Prefer 规则。</li>
+</ul>
+<h4 id="cross-cluster-search">
+  Cross Cluster Search
+  <a class="anchor" href="#cross-cluster-search">#</a>
+</h4>
+<blockquote>
+<p>早期 Tribe Node 的方案 存在一定的问题，现在已被 Deprecated；
+Elasticsearch 5.3 引入了跨集群搜索的功能（Cross Cluster Search），推荐使用：</p>
+<ol>
+<li>允许任何节点扮演 federated节点，以轻量的方式，将搜索请求进行代理；</li>
+<li>不需要以 Client Node 的形式加入其它集群。</li>
+</ol>
+</blockquote>
+<ul>
+<li>配置</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">//在每个集群上设置动态的设置
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">_cluster/settings</span>
+{
+  <span style="color:#f92672">&#34;persistent&#34;</span>: {
+    <span style="color:#f92672">&#34;cluster&#34;</span>: {
+      <span style="color:#f92672">&#34;remote&#34;</span>: {
+        <span style="color:#f92672">&#34;cluster0&#34;</span>: {
+          <span style="color:#f92672">&#34;seeds&#34;</span>: [
+            <span style="color:#e6db74">&#34;127.0.0.1:9300&#34;</span>
+          ],
+          <span style="color:#f92672">&#34;transport.ping_schedule&#34;</span>: <span style="color:#e6db74">&#34;30s&#34;</span>
+        },
+        <span style="color:#f92672">&#34;cluster1&#34;</span>: {
+          <span style="color:#f92672">&#34;seeds&#34;</span>: [
+            <span style="color:#e6db74">&#34;127.0.0.1:9301&#34;</span>
+          ],
+          <span style="color:#f92672">&#34;transport.compress&#34;</span>: <span style="color:#66d9ef">true</span>,
+          <span style="color:#f92672">&#34;skip_unavailable&#34;</span>: <span style="color:#66d9ef">true</span>
+        },
+        <span style="color:#f92672">&#34;cluster2&#34;</span>: {
+          <span style="color:#f92672">&#34;seeds&#34;</span>: [
+            <span style="color:#e6db74">&#34;127.0.0.1:9302&#34;</span>
+          ]
+        }
+      }
+    }
+  }
+}
+</code></pre></div><ul>
+<li>查询</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 在第一个集群搜索
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">/users,cluster</span><span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">:users,cluster</span><span style="color:#ae81ff">2</span><span style="color:#960050;background-color:#1e0010">:users/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;range&#34;</span>: {
+      <span style="color:#f92672">&#34;age&#34;</span>: {
+        <span style="color:#f92672">&#34;gte&#34;</span>: <span style="color:#ae81ff">20</span>,
+        <span style="color:#f92672">&#34;lte&#34;</span>: <span style="color:#ae81ff">40</span>
+      }
+    }
+  }
+}
+</code></pre></div></article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#基于词项和基于全文搜索">基于词项和基于全文搜索</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#query--filtering">Query &amp; Filtering</a></li>
+    <li><a href="#bool-query">Bool Query</a></li>
+    <li><a href="#boosting--boosting-query">Boosting &amp; Boosting Query</a></li>
+    <li><a href="#disjunction-max-query">Disjunction Max Query</a></li>
+    <li><a href="#multimatch">MultiMatch</a></li>
+    <li><a href="#function-score-query">Function Score Query</a></li>
+    <li><a href="#suggester">Suggester</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#使用别名">使用别名</a></li>
+    <li><a href="#search-templage">Search Templage</a></li>
+    <li><a href="#配置跨集群搜索">配置跨集群搜索</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

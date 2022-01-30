@@ -1,0 +1,1175 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="分布式特性 #   Elasticsearch 天生就是分布式架构。
+   高可用性
+ 服务可用性：允许有节点停止服务； 数据可用性：部分节点丢失，不会丢失数据。    可扩展性
+ 请求量提升/数据不断增长（将数据分布到所有节点上）。    带来的好处
+ 存储支持水平扩容，支持PB级数据； 提高系统的可用性，部分节点停止服务，整个集群的服务不受影响。    不同集群的设置
+ 不同的集群通过不同的名字来区分，默认名字 elasticsearch ； 通过配置文件修改，或者在命令行中 -E cluster.name = clustername 进行设定。    节点 #   节点是一个Elasticsearch 的实例，其本质就是一个JAVA进程。一台机器上可以运行多个Elasticsearch进程，但是生产环境一般建议一台机器上就运行一个Elasticsearch实例。
+每一个节点都有名字，通过配置文件配置，或者启动的时候 -E node.name = nodename指定；每一个节点在启动之后，会分配一个UID，保存在data目录下。
+   Coordinating Node
+ 处理请求的节点，叫Coordinating Node。路由请求道正确的节点，例如创建索引的请求，需要路由到Master节点。
+  所有节点默认都是Coordinating Node； 通过将其他类型设置为False，使其成为Dedicated Coordinating Node。    Data Node">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="分布式原理" />
+<meta property="og:description" content="分布式特性 #   Elasticsearch 天生就是分布式架构。
+   高可用性
+ 服务可用性：允许有节点停止服务； 数据可用性：部分节点丢失，不会丢失数据。    可扩展性
+ 请求量提升/数据不断增长（将数据分布到所有节点上）。    带来的好处
+ 存储支持水平扩容，支持PB级数据； 提高系统的可用性，部分节点停止服务，整个集群的服务不受影响。    不同集群的设置
+ 不同的集群通过不同的名字来区分，默认名字 elasticsearch ； 通过配置文件修改，或者在命令行中 -E cluster.name = clustername 进行设定。    节点 #   节点是一个Elasticsearch 的实例，其本质就是一个JAVA进程。一台机器上可以运行多个Elasticsearch进程，但是生产环境一般建议一台机器上就运行一个Elasticsearch实例。
+每一个节点都有名字，通过配置文件配置，或者启动的时候 -E node.name = nodename指定；每一个节点在启动之后，会分配一个UID，保存在data目录下。
+   Coordinating Node
+ 处理请求的节点，叫Coordinating Node。路由请求道正确的节点，例如创建索引的请求，需要路由到Master节点。
+  所有节点默认都是Coordinating Node； 通过将其他类型设置为False，使其成为Dedicated Coordinating Node。    Data Node" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2021-12-26T12:14:33+08:00" />
+<meta property="article:modified_time" content="2021-12-26T12:14:33+08:00" />
+
+<title>分布式原理 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.66f77fe6d3d527a8b25a956c6f38abbc8b2fc882f63bc32f784bafc5f05a15b0.js" integrity="sha256-Zvd/5tPVJ6iyWpVsbzirvIsvyIL2O8MveEuvxfBaFbA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class=" active">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>MySQL</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/0_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Distribute</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>分布式原理</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#分布式特性">分布式特性</a></li>
+    <li><a href="#节点">节点</a></li>
+    <li><a href="#分片">分片</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#集群">集群</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#文档分布式存储">文档分布式存储</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分布式搜索机制">分布式搜索机制</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#处理并发读写操作">处理并发读写操作</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="分布式特性">
+  分布式特性
+  <a class="anchor" href="#%e5%88%86%e5%b8%83%e5%bc%8f%e7%89%b9%e6%80%a7">#</a>
+</h2>
+<blockquote>
+<p>Elasticsearch 天生就是分布式架构。</p>
+</blockquote>
+<ul>
+<li>
+<p>高可用性</p>
+<ul>
+<li>服务可用性：允许有节点停止服务；</li>
+<li>数据可用性：部分节点丢失，不会丢失数据。</li>
+</ul>
+</li>
+<li>
+<p>可扩展性</p>
+<ul>
+<li>请求量提升/数据不断增长（将数据分布到所有节点上）。</li>
+</ul>
+</li>
+<li>
+<p>带来的好处</p>
+<ol>
+<li>存储支持水平扩容，支持PB级数据；</li>
+<li>提高系统的可用性，部分节点停止服务，整个集群的服务不受影响。</li>
+</ol>
+</li>
+<li>
+<p>不同集群的设置</p>
+<ul>
+<li>不同的集群通过不同的名字来区分，默认名字 elasticsearch ；</li>
+<li>通过配置文件修改，或者在命令行中 -E cluster.name = clustername 进行设定。</li>
+</ul>
+</li>
+</ul>
+<h2 id="节点">
+  节点
+  <a class="anchor" href="#%e8%8a%82%e7%82%b9">#</a>
+</h2>
+<blockquote>
+<p>节点是一个Elasticsearch 的实例，其本质就是一个JAVA进程。一台机器上可以运行多个Elasticsearch进程，但是生产环境一般建议一台机器上就运行一个Elasticsearch实例。</p>
+<p>每一个节点都有名字，通过配置文件配置，或者启动的时候 -E node.name = nodename指定；每一个节点在启动之后，会分配一个UID，保存在data目录下。</p>
+</blockquote>
+<ul>
+<li>
+<p>Coordinating Node</p>
+<blockquote>
+<p>处理请求的节点，叫Coordinating Node。路由请求道正确的节点，例如创建索引的请求，需要路由到Master节点。</p>
+</blockquote>
+<ul>
+<li>所有节点默认都是Coordinating Node；</li>
+<li>通过将其他类型设置为False，使其成为Dedicated Coordinating Node。</li>
+</ul>
+</li>
+<li>
+<p>Data Node</p>
+<blockquote>
+<p>可以保存数据的节点，叫做Data Node，在数据扩展上起到了至关重要的作用（由Master Node决定如何把分片分发到数据节点上）。通过增加 Data Node，可以解决数据水平扩展和解决数据单点问题。</p>
+</blockquote>
+<blockquote>
+<p>同一索引，主分片和副本分片不能分配在同一节点，防止某一节点宕机时数据丢失。如果某一个集群只有一个节点，此时某一个索引又存在副本分片，此时集群状态是黄色的，因为无法分配副本分片；如果该集群后续有节点加入，会在新加入的节点创建副本分片。</p>
+</blockquote>
+<ul>
+<li>节点启动后，默认就是数据节点；</li>
+<li>可以设置node.data:false禁止。</li>
+</ul>
+</li>
+<li>
+<p>Master Node</p>
+<blockquote>
+<p>Master Node的职责：处理创建，删除索引等请求/决定分片被分配到哪个节点/负责索引的创建于删除；维护并且更新Cluster State。</p>
+</blockquote>
+<ul>
+<li>最佳实践
+<ol>
+<li>Master非常重要，在部署上需要考虑解决单点的问题；</li>
+<li>为一个集群设置多个Mastger节点/每个节点只承担Master的单一角色。</li>
+</ol>
+</li>
+</ul>
+</li>
+<li>
+<p>Master Eligible Node</p>
+<blockquote>
+<p>一个集群，支持配置多个Master Eligible节点。这些节点可以在必要时（如Master节点出现故障，网络故障时）参与选主流程，成为Master节点；当集群内第一个Master eligible节点启动的时候，它会将自己选举成Master节点。</p>
+</blockquote>
+<ul>
+<li>每个节点启动后，默认就是一个Master eligible节点；</li>
+<li>可以设置node.master:false禁止。</li>
+</ul>
+</li>
+<li>
+<p>默认节点类型</p>
+<table>
+<thead>
+<tr>
+<th>节点类型</th>
+<th>配置参数</th>
+<th>默认值</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Master Eligible</td>
+<td>node.master</td>
+<td>true</td>
+</tr>
+<tr>
+<td>data</td>
+<td>ode.data</td>
+<td>true</td>
+</tr>
+<tr>
+<td>ingest</td>
+<td>node.ingest</td>
+<td>true</td>
+</tr>
+<tr>
+<td>coordinating only</td>
+<td>无</td>
+<td>设置上面三个参数全为false</td>
+</tr>
+<tr>
+<td>machine learning</td>
+<td>node.ml</td>
+<td>true（需要 enable x-pack）</td>
+</tr>
+</tbody>
+</table>
+</li>
+</ul>
+<h2 id="分片">
+  分片
+  <a class="anchor" href="#%e5%88%86%e7%89%87">#</a>
+</h2>
+<blockquote>
+<p>分片ES中最小的工作单元，是一个Lucene的Index。</p>
+</blockquote>
+<ul>
+<li>
+<p>Primary Shard - 提升系统存储容量</p>
+<blockquote>
+<p>通过主分片，将数据分布在所有节点上，实现存储的水平扩展。</p>
+<p>主分片（Primary Shard）数在索引创建的时候指定，后续默认不能修改，如果修改，需重建索引。</p>
+</blockquote>
+</li>
+<li>
+<p>Replica Shard - 提高数据可用性</p>
+<blockquote>
+<p>通过引入副本分配（Replica Shard）</p>
+<ol>
+<li>
+<p>提高数据的可用性。一旦主分片丢失，副本分配可以Promote成主分片。副本分片数可以动态调整。每个节点上都有完备的数据。如果不设置副本分片，一旦节点硬件故障，就有可能造成数据丢失。</p>
+</li>
+<li>
+<p>副本分片由主分片（Primary Shard）同步。通过支持增加Replica个数，一定程度可以提高读取吞吐量。</p>
+</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>分片数的设定</p>
+<ul>
+<li>
+<p>主分片数过小</p>
+<blockquote>
+<p>如果该索引增长的很快，集群无法通过增加节点实现对这个索引的数据扩展。</p>
+</blockquote>
+</li>
+<li>
+<p>主分片数过大</p>
+<blockquote>
+<p>导致单个Shard容量很小，引发一个节点上有过多的分片，影响性能。</p>
+</blockquote>
+</li>
+<li>
+<p>副本分片数设置过多</p>
+<blockquote>
+<p>副本分片数设置过多，会降低集群整体的写入性能。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="倒排索引的不可变性">
+  倒排索引的不可变性
+  <a class="anchor" href="#%e5%80%92%e6%8e%92%e7%b4%a2%e5%bc%95%e7%9a%84%e4%b8%8d%e5%8f%af%e5%8f%98%e6%80%a7">#</a>
+</h4>
+<blockquote>
+<p>倒排索引采用Immutable Design 一旦生成，不可更改。</p>
+</blockquote>
+<ul>
+<li>
+<p>不可变性优势</p>
+<ol>
+<li>无需考虑并发写文件的问题，避免了锁机制带来的性能问题；</li>
+<li>一旦读入内核的文件系统缓存，便留在那里。只要文件系统存有足够的空间，大部分请求会直接请求内存，不会命中磁盘，提升了很大的性能；</li>
+<li>缓存容易生成和维护/数据可以被压缩。</li>
+</ol>
+</li>
+<li>
+<p>不可变性带来的挑战</p>
+<p>如果需要让一个新的文档可以被搜索，需要重建整个索引。</p>
+</li>
+</ul>
+<h4 id="lucene-index">
+  Lucene Index
+  <a class="anchor" href="#lucene-index">#</a>
+</h4>
+<blockquote>
+<p>在Lucene中，单个倒排索引文件被称为Segment。Segment是自包含的，不可变更的。</p>
+</blockquote>
+<blockquote>
+<p>多个Segments汇总在一起，称为Lucene的Index，其对应的就是Es中的Shard。</p>
+</blockquote>
+<ul>
+<li>
+<p>新文档写入时</p>
+<p>会生成新的Segment，查询时会同时查询所有的Segments，并且对结果汇总。Lucene中有一个文件，用来记录所有Segments信息，叫做Commit Point。</p>
+</li>
+<li>
+<p>删除文档信息时</p>
+<p>保存在.del文件中，查询时会过滤掉。</p>
+</li>
+</ul>
+<p><img src="/images/es_pic/lucene_index.png" alt="lucene_index" /></p>
+<h4 id="分片生命周期">
+  分片生命周期
+  <a class="anchor" href="#%e5%88%86%e7%89%87%e7%94%9f%e5%91%bd%e5%91%a8%e6%9c%9f">#</a>
+</h4>
+<ol>
+<li>Refresh</li>
+</ol>
+<blockquote>
+<p>将Index Buffer写入Segment的过程叫Refresh。Refresh 不执行 fsync操作。如果系统有大量的数据写入，那就会产生很多的Segment。</p>
+<p>Refresh后，数据就可以被搜索到了。这也是为什么Elasticsearch被称为近实时搜索。</p>
+</blockquote>
+<ul>
+<li>Refresh 频率：默认1s发生一次，可通过index.refresh_interval 配置。</li>
+<li>其他 Refresh时机：Index Buffer 被占满时，会触发Refresh，默认值是JVM的 10%。</li>
+</ul>
+<p><img src="/images/es_pic/refresh.png" alt="refresh" /></p>
+<ol start="2">
+<li>Transaction Log</li>
+</ol>
+<blockquote>
+<p>Segment写入磁盘的过程相对耗时，借助文件系统缓存，Refresh时，先将Segment写入缓存以开放查询；为了保证数据不会丢失，所以在Index文档时，同时写Transaction Log，高版本开始，Transaction Log默认落盘，每个分片有一个Transaction Log。</p>
+<p>在ES Refresh时，Index Buffer 被清空，Transaction Log 不会清空。</p>
+</blockquote>
+<p><img src="/images/es_pic/transaction_log.png" alt="transaction_log" /></p>
+<ol start="3">
+<li>Flush &amp; Lucene Commit</li>
+</ol>
+<blockquote>
+<p>调用Refresh，Index Buffer 清空并且 Refresh；调用fsync，将缓存中的Segments写入磁盘；清空（删除）Transaction Log.</p>
+</blockquote>
+<ul>
+<li>频率：默认30分钟调用一次；</li>
+<li>其他Flush 时机：Transaction Log满了会调用（默认512M）。</li>
+</ul>
+<p><img src="/images/es_pic/flush.png" alt="flush" /></p>
+<ol start="4">
+<li>Merge</li>
+</ol>
+<blockquote>
+<p>Segment很多，需要被定期合并。Merge可以减少Segments，真正删除已经删除的文档（.del文件）。</p>
+</blockquote>
+<p>ES 和 Lucene 会自动进行Merge 操作，也可以手动调用：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">my_index/_forcemerge</span>
+</code></pre></div><h2 id="集群">
+  集群
+  <a class="anchor" href="#%e9%9b%86%e7%be%a4">#</a>
+</h2>
+<h4 id="集群状态">
+  集群状态
+  <a class="anchor" href="#%e9%9b%86%e7%be%a4%e7%8a%b6%e6%80%81">#</a>
+</h4>
+<blockquote>
+<p>集群状态（Cluster State），维护了一个集群中，必要的信息：</p>
+<ol>
+<li>所有节点信息；</li>
+<li>所有索引和其相关的Mapping和Setting信息；</li>
+<li>分片的路由信息。</li>
+</ol>
+</blockquote>
+<ul>
+<li>在每个节点上都保存了集群的状态信息；</li>
+<li>只有Master节点才能修改集群的状态信息，并负责同步给其他节点。</li>
+</ul>
+<h4 id="选主过程">
+  选主过程
+  <a class="anchor" href="#%e9%80%89%e4%b8%bb%e8%bf%87%e7%a8%8b">#</a>
+</h4>
+<ol>
+<li>Master Eligible Node互相Ping对方，Node Id 低的成为被选举的节点；</li>
+<li>其他节点会加入集群，但是不承担Master节点的角色；</li>
+<li>一旦发现被选中的主节点丢失，就会被选举出新的Master节点。</li>
+</ol>
+<h4 id="脑裂">
+  脑裂
+  <a class="anchor" href="#%e8%84%91%e8%a3%82">#</a>
+</h4>
+<blockquote>
+<p>Split-Brain，分布式系统的经典网络问题，当出现网络问题，假设有3个节点，一个节点和其他节点无法连接，Node 2 和 Node 3会重新选举Master，Node 1 自己还是作为 Master组成一个集群，同时更新Cluster State；导致两个Master 维护不同的 cluster state。网络恢复时，无法正确恢复。</p>
+</blockquote>
+<p>Es中如何解决</p>
+<ol>
+<li>
+<p>设定仲裁数</p>
+<blockquote>
+<p>限定一个选举条件，设置quorum（仲裁），只有在Master eligible节点数大于quorum时，才能进行选举；Quorum = (master 节点总数/ 2) + 1。</p>
+<p>例如：当3个master eligible时，设置discovery.zen.minimum_master_nodes为2，避免脑裂。</p>
+</blockquote>
+</li>
+<li>
+<p>从7.0开始，无需这个配置</p>
+</li>
+</ol>
+<h4 id="故障转移">
+  故障转移
+  <a class="anchor" href="#%e6%95%85%e9%9a%9c%e8%bd%ac%e7%a7%bb">#</a>
+</h4>
+<blockquote>
+<p>下图3个节点共同组成集群。包含了1个索引，索引设置了3个Primary Shard 和 1个 Replica。</p>
+</blockquote>
+<p><img src="/images/es_pic/failover.png" alt="failover" /></p>
+<p>故障转移过程：</p>
+<ol>
+<li>Node 1 是Master 节点，节点意外出现故障。集群重新选举Master 节点；</li>
+<li>Node 3上的R0提升为 P0，集群变黄；</li>
+<li>R0 和R1 分配，集群变绿。</li>
+</ol>
+<h4 id="集群健康状态">
+  集群健康状态
+  <a class="anchor" href="#%e9%9b%86%e7%be%a4%e5%81%a5%e5%ba%b7%e7%8a%b6%e6%80%81">#</a>
+</h4>
+<ul>
+<li>Green：健康，所有主分片和副本分片都可用；</li>
+<li>Yellow：亚健康，所有的主分片可用，部分副本分片不可用；</li>
+<li>Red：不健康状态，部分主分片不可用。</li>
+</ul>
+<h2 id="文档分布式存储">
+  文档分布式存储
+  <a class="anchor" href="#%e6%96%87%e6%a1%a3%e5%88%86%e5%b8%83%e5%bc%8f%e5%ad%98%e5%82%a8">#</a>
+</h2>
+<blockquote>
+<p>文档会存储在具体的某个主分片和副本分片上：例如 文档1，会存储在P0和 R0分片上。</p>
+</blockquote>
+<h4 id="文档到分片的映射算法">
+  文档到分片的映射算法
+  <a class="anchor" href="#%e6%96%87%e6%a1%a3%e5%88%b0%e5%88%86%e7%89%87%e7%9a%84%e6%98%a0%e5%b0%84%e7%ae%97%e6%b3%95">#</a>
+</h4>
+<blockquote>
+<p>确保文档能够均匀分布在所用分片上，充分利用硬件资源，避免部分机器空闲，部分机器繁忙。</p>
+</blockquote>
+<ol>
+<li>
+<p>随机/Round Robin；</p>
+<p>缺点：当查询文档1，分片数很多，需要多次查询才可能查到 文档1。</p>
+</li>
+<li>
+<p>维护文档到分片的映射关系；</p>
+<p>缺点：当文档数据量大的时候，维护成本高。</p>
+</li>
+<li>
+<p>实时计算，通过文档1，自动算出，需要去哪个分片获取文档。</p>
+<p>shard = hash(_routing) % number_of_primary_shards</p>
+<blockquote>
+<p>Hash算法确保文档均匀分散到分片中；默认的_routing值是文档id；可以自行制定routing数值，例如用相同国家的商品，都分配到制定的shard（如下）。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">posts/_doc/</span><span style="color:#ae81ff">100</span><span style="color:#960050;background-color:#1e0010">?routing=bigdata</span>
+{
+  <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;xxxx&#34;</span>
+}
+</code></pre></div></li>
+</ol>
+<p>ES一般使用算法3，这也是设置Index Settings 后，Primary 数，不能随意更改的根本原因。</p>
+<h4 id="更新一个文档的流程">
+  更新一个文档的流程
+  <a class="anchor" href="#%e6%9b%b4%e6%96%b0%e4%b8%80%e4%b8%aa%e6%96%87%e6%a1%a3%e7%9a%84%e6%b5%81%e7%a8%8b">#</a>
+</h4>
+<p><img src="/images/es_pic/update.png" alt="update" /></p>
+<h4 id="删除一个文档的流程">
+  删除一个文档的流程
+  <a class="anchor" href="#%e5%88%a0%e9%99%a4%e4%b8%80%e4%b8%aa%e6%96%87%e6%a1%a3%e7%9a%84%e6%b5%81%e7%a8%8b">#</a>
+</h4>
+<p><img src="/images/es_pic/del.png" alt="del" /></p>
+<h2 id="分布式搜索机制">
+  分布式搜索机制
+  <a class="anchor" href="#%e5%88%86%e5%b8%83%e5%bc%8f%e6%90%9c%e7%b4%a2%e6%9c%ba%e5%88%b6">#</a>
+</h2>
+<blockquote>
+<p>Elasticsearch 的搜索，会分两阶段进行：</p>
+<ol>
+<li>第一阶段-Query；</li>
+<li>第二阶段-Fetch。</li>
+</ol>
+</blockquote>
+<ul>
+<li>
+<p>Query 阶段</p>
+<blockquote>
+<p>假设集群有3个节点</p>
+<ol>
+<li>用户发出搜索请求到ES 节点。节点收到请求后，会以 Coordinating 节点的身份，在6个主副分片中随机选择3个分片，发送查询请求；</li>
+<li>被选中的分片执行查询，进行排序。然后，每个分片都会返回From + Size 个排序后的文档Id和排序值给Coordinating节点。</li>
+</ol>
+</blockquote>
+<p><img src="/images/es_pic/query.png" alt="query" /></p>
+</li>
+<li>
+<p>Fetch 阶段</p>
+<blockquote>
+<ol>
+<li>Coordinating Node 会将 Query 阶段，从每个分片获取的排序后的文档Id列表重新进行排序。选取From 到 From + size 个文档的Id；</li>
+<li>以Multi get请求的方式，到相应的分片获取详细的文档数据。</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+<h4 id="query-then-fetch-潜在的问题">
+  Query Then Fetch 潜在的问题
+  <a class="anchor" href="#query-then-fetch-%e6%bd%9c%e5%9c%a8%e7%9a%84%e9%97%ae%e9%a2%98">#</a>
+</h4>
+<ul>
+<li>
+<p>性能问题</p>
+<ol>
+<li>每个分片上需要查的文档个数 = from +size</li>
+<li>最终协调节点需要处理：number_of_shard * ( from + size)</li>
+<li>深度分页</li>
+</ol>
+</li>
+<li>
+<p>相关性算分</p>
+<blockquote>
+<p>每个分片基于自己的分片上的数据进行相关度计算。这会导致打分偏离的情况，特别是数据量很少时。相关性算分在分片之间是相互独立。当文档总数很少的情况下，如果主分片大于1，主分片数越多，相关性算分会越不准。</p>
+</blockquote>
+<p>解决方法：</p>
+<ul>
+<li>
+<p>数据量不大的时候，可以将主分片数设置为1;</p>
+</li>
+<li>
+<p>当数据量足够大的时候，只要保证文档均匀分散在各个分片上，结果一般不会出现偏差；</p>
+</li>
+<li>
+<p>使用DFS Query Then Fetch，搜索URL中指定参数 &ldquo;_search?search_type=dfs_query_then_fetch&rdquo;</p>
+<blockquote>
+<p>到每个分片把各分片的词频和文档频率进行搜集，然后完整的进行一次相关性算分，耗费更加多的CPU和内存，执行性能低下，一般不建议使用。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="排序">
+  排序
+  <a class="anchor" href="#%e6%8e%92%e5%ba%8f">#</a>
+</h4>
+<blockquote>
+<p>排序是针对字段原始内容进行的，倒排索引无法发挥作用，需要用到正排索引。通过文档ID 和字段快速得到字段原始内容。默认情况根据算分进行排序。</p>
+<p>Elasticsearch 有两种实现方法：</p>
+<ol>
+<li>Fielddata</li>
+<li>Doc Values （列式存储，对Text 类型无效）</li>
+</ol>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Doc Values</th>
+<th>Fielddata</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>何时创建</td>
+<td>索引时，和倒排索引一起创建</td>
+<td>搜索时候动态创建</td>
+</tr>
+<tr>
+<td>创建位置</td>
+<td>磁盘文件</td>
+<td>JVM Heap</td>
+</tr>
+<tr>
+<td>优点</td>
+<td>避免大量内存占用</td>
+<td>索引速度块，不用占用额外磁盘空间</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>降低索引速度，占用额外磁盘空间</td>
+<td>文档过多时，动态创建开销大，占用过多JVM Heap</td>
+</tr>
+<tr>
+<td>缺省值</td>
+<td>ES 2.x 之后</td>
+<td>ES 1.x 及之前</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>
+<p>关闭 Doc Values</p>
+<blockquote>
+<p>Doc Values 默认启用，可以通过Mapping设置关闭，可以增加索引的速度/减少磁盘空间。如果重新打开，需要重建索引。</p>
+<p>明确不需要做排序以及聚合分析，可以关闭。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="分页">
+  分页
+  <a class="anchor" href="#%e5%88%86%e9%a1%b5">#</a>
+</h4>
+<blockquote>
+<p>默认情况下，查询按照相关度算分排序，返回前10条记录；</p>
+<p>from ：开始位置；</p>
+<p>Size ：期望获取文档的总数。</p>
+</blockquote>
+<h4 id="深度分页问题">
+  深度分页问题
+  <a class="anchor" href="#%e6%b7%b1%e5%ba%a6%e5%88%86%e9%a1%b5%e9%97%ae%e9%a2%98">#</a>
+</h4>
+<blockquote>
+<p>ES 天生就是分布式的。查询信息，但是数据分别保存在多个分片，多台机器，ES天生就需要满足排序的需要（按照相关性算分）。</p>
+<p>当一个查询：From = 990， Size = 10：</p>
+<ol>
+<li>会在每个分片上先获取1000 个文档；</li>
+<li>然后通过Coordinating Node聚合所有结果；</li>
+<li>最后再通过排序选取前 1000个文档。</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>页数越深，占用内存越多。为了避免深度分页带来的内存开销。ES有一个设定，默认限定10000 个文档</p>
+</blockquote>
+<ul>
+<li>
+<p>Search After</p>
+<blockquote>
+<p>避免深度分页的性能问题，可以实时获取下一页文档信息。但是有限制：</p>
+<ol>
+<li>不支持指定页数；</li>
+<li>只能下翻。</li>
+</ol>
+<p>使用：</p>
+<ol>
+<li>第一步搜索需要指定sort，并且保证值是唯一的（可以通过加入_id保证唯一性）;</li>
+<li>然后使用上一次，最后一个文档的sort值进行查询。</li>
+</ol>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+    <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">1</span>,
+    <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;match_all&#34;</span>: {}
+    },
+    <span style="color:#f92672">&#34;search_after&#34;</span>:
+        [<span style="color:#ae81ff">10</span>,<span style="color:#e6db74">&#34;ZQ0vYGsBrR8X3IP75QqX&#34;</span>],
+    <span style="color:#f92672">&#34;sort&#34;</span>: [
+        {<span style="color:#f92672">&#34;age&#34;</span>: <span style="color:#e6db74">&#34;desc&#34;</span>} ,{<span style="color:#f92672">&#34;_id&#34;</span>: <span style="color:#e6db74">&#34;asc&#34;</span>}    
+    ]
+}
+</code></pre></div><blockquote>
+<p>通过唯一排序值定位，将每次要处理的文档数都控制在 10。</p>
+</blockquote>
+</li>
+<li>
+<p>Scroll API</p>
+<blockquote>
+<p>创建一个快照，有新的数据写入以后，无法被查到；每次查询后，输入上一次的scroll id。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/users/_search?scroll=</span><span style="color:#ae81ff">5</span><span style="color:#960050;background-color:#1e0010">m</span>
+{
+    <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">1</span>,
+    <span style="color:#f92672">&#34;query&#34;</span>: {
+        <span style="color:#f92672">&#34;match_all&#34;</span> : {
+        }
+    }
+}
+<span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/_search/scroll</span>
+{
+    <span style="color:#f92672">&#34;scroll&#34;</span> : <span style="color:#e6db74">&#34;1m&#34;</span>,
+    <span style="color:#f92672">&#34;scroll_id&#34;</span> : <span style="color:#e6db74">&#34;DXF1ZXJ5QW5kRmV0Y2gBAAAAAAAAAWAWbWdoQXR2d3ZUd2kzSThwVTh4bVE0QQ==&#34;</span>
+}
+</code></pre></div></li>
+<li>
+<p>不同的搜索类型和使用场景</p>
+<ul>
+<li>
+<p>Regular</p>
+<blockquote>
+<p>需要实时获取顶部的部分文档。例如查询最新的订单。</p>
+</blockquote>
+</li>
+<li>
+<p>Scroll</p>
+<blockquote>
+<p>需要全部文档，例如导出全部数据。</p>
+</blockquote>
+</li>
+<li>
+<p>Pagination</p>
+<blockquote>
+<p>From 和 Size；</p>
+<p>如果需要深度分页，使用 Search After。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h2 id="处理并发读写操作">
+  处理并发读写操作
+  <a class="anchor" href="#%e5%a4%84%e7%90%86%e5%b9%b6%e5%8f%91%e8%af%bb%e5%86%99%e6%93%8d%e4%bd%9c">#</a>
+</h2>
+<h4 id="并发空值的必要性">
+  并发空值的必要性
+  <a class="anchor" href="#%e5%b9%b6%e5%8f%91%e7%a9%ba%e5%80%bc%e7%9a%84%e5%bf%85%e8%a6%81%e6%80%a7">#</a>
+</h4>
+<blockquote>
+<p>两个Web程序同时更新某个文档，如果缺乏有效的并发，会导致更改的数据丢失。</p>
+</blockquote>
+<ul>
+<li>
+<p>悲观并发控制</p>
+<blockquote>
+<p>假定有变更冲突的可能。会对资源加锁，防止冲突。例如数据库行锁。</p>
+</blockquote>
+</li>
+<li>
+<p>乐观并发控制</p>
+<blockquote>
+<p>假定冲突是不会发生的，不会阻塞正在尝试的操作。如果数据在读写中被修改，更新将会失败。应用程序决定如何解决冲突，例如重试更新，使用新的数据，或者将错误报告给用户。</p>
+</blockquote>
+<blockquote>
+<p>ES采用的是乐观并发控制。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="es的乐观并发空值">
+  ES的乐观并发空值
+  <a class="anchor" href="#es%e7%9a%84%e4%b9%90%e8%a7%82%e5%b9%b6%e5%8f%91%e7%a9%ba%e5%80%bc">#</a>
+</h4>
+<blockquote>
+<p>ES 中的文档是不可变更的。如果你更新一个文档，会将文档标记为删除，同时增加一个全新的文档。同时文档的version字段加1。</p>
+</blockquote>
+<ul>
+<li>
+<p>内部版本控制</p>
+<blockquote>
+<p>if_seq_no + if_primary_term</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">products/_doc/</span><span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">?if_seq_no=</span><span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">&amp;if_primary_term=</span><span style="color:#ae81ff">1</span>
+{
+  <span style="color:#f92672">&#34;title&#34;</span>:<span style="color:#e6db74">&#34;iphone&#34;</span>,
+  <span style="color:#f92672">&#34;count&#34;</span>:<span style="color:#ae81ff">100</span>
+}
+</code></pre></div></li>
+<li>
+<p>使用外部版本（使用其他数据库作为主要数据存储）</p>
+<blockquote>
+<p>version + version_type = external</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">products/_doc/</span><span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">?version=</span><span style="color:#ae81ff">30000</span><span style="color:#960050;background-color:#1e0010">&amp;version_type=external</span>
+{
+  <span style="color:#f92672">&#34;title&#34;</span>:<span style="color:#e6db74">&#34;iphone&#34;</span>,
+  <span style="color:#f92672">&#34;count&#34;</span>:<span style="color:#ae81ff">100</span>
+}
+</code></pre></div></li>
+</ul>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#分布式特性">分布式特性</a></li>
+    <li><a href="#节点">节点</a></li>
+    <li><a href="#分片">分片</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#集群">集群</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#文档分布式存储">文档分布式存储</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分布式搜索机制">分布式搜索机制</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#处理并发读写操作">处理并发读写操作</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

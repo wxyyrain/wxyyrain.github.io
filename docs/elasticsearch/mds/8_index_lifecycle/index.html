@@ -1,0 +1,604 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="索引管理API #    Open / Close Index
+ 索引关闭后无法进行读写，但是索引数据不会被删除。
+ // 关闭索引 POST /索引名/_close // 索引存在 HEAD 索引名 // 打开索引 POST /索引名/_open   Shrink Index
+ 可以将索引的主分片数收缩到较小的值。使用场景：
+ 索引保存的数据量比较小，需要重新设定主分片； 索引从Hot 移动到 Warm后，需要降低主分片数。    会使用和索引源相同的配置创建一个新的索引，仅仅降低主分片数。源分片数必须是目标分片数的倍数。如果源分片数是素数，目标分片数只能为1；如果文件系统支持硬链接，会将Segments 硬连接到目标索引，所以性能好（相比较于Reindex）。完成后，可以删除源索引。
+  使用要求：
+ 分片必须只读； 所有分片必须在同一个节点上； 集群健康状态为 Green。   POST my_source_index/_shrink/my_target_index { &#34;settings&#34;: { &#34;index.number_of_replicas&#34;: 0, &#34;index.number_of_shards&#34;: 2, &#34;index.codec&#34;: &#34;best_compression&#34; }, &#34;aliases&#34;: { &#34;my_search_indices&#34;: {} } }   Split Index">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="索引生命周期管理" />
+<meta property="og:description" content="索引管理API #    Open / Close Index
+ 索引关闭后无法进行读写，但是索引数据不会被删除。
+ // 关闭索引 POST /索引名/_close // 索引存在 HEAD 索引名 // 打开索引 POST /索引名/_open   Shrink Index
+ 可以将索引的主分片数收缩到较小的值。使用场景：
+ 索引保存的数据量比较小，需要重新设定主分片； 索引从Hot 移动到 Warm后，需要降低主分片数。    会使用和索引源相同的配置创建一个新的索引，仅仅降低主分片数。源分片数必须是目标分片数的倍数。如果源分片数是素数，目标分片数只能为1；如果文件系统支持硬链接，会将Segments 硬连接到目标索引，所以性能好（相比较于Reindex）。完成后，可以删除源索引。
+  使用要求：
+ 分片必须只读； 所有分片必须在同一个节点上； 集群健康状态为 Green。   POST my_source_index/_shrink/my_target_index { &#34;settings&#34;: { &#34;index.number_of_replicas&#34;: 0, &#34;index.number_of_shards&#34;: 2, &#34;index.codec&#34;: &#34;best_compression&#34; }, &#34;aliases&#34;: { &#34;my_search_indices&#34;: {} } }   Split Index" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-01-09T12:26:02+08:00" />
+<meta property="article:modified_time" content="2022-01-09T12:26:02+08:00" />
+
+<title>索引生命周期管理 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.66f77fe6d3d527a8b25a956c6f38abbc8b2fc882f63bc32f784bafc5f05a15b0.js" integrity="sha256-Zvd/5tPVJ6iyWpVsbzirvIsvyIL2O8MveEuvxfBaFbA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class=" active">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>MySQL</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/0_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Distribute</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>索引生命周期管理</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#索引管理api">索引管理API</a></li>
+    <li><a href="#时间序列索引">时间序列索引</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="索引管理api">
+  索引管理API
+  <a class="anchor" href="#%e7%b4%a2%e5%bc%95%e7%ae%a1%e7%90%86api">#</a>
+</h2>
+<ul>
+<li>
+<p>Open / Close Index</p>
+<blockquote>
+<p>索引关闭后无法进行读写，但是索引数据不会被删除。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 关闭索引
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/索引名/_close</span>
+<span style="color:#75715e">// 索引存在
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">HEAD</span> <span style="color:#960050;background-color:#1e0010">索引名</span>
+<span style="color:#75715e">// 打开索引
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/索引名/_open</span>
+</code></pre></div></li>
+<li>
+<p>Shrink Index</p>
+<blockquote>
+<p>可以将索引的主分片数收缩到较小的值。使用场景：</p>
+<ol>
+<li>索引保存的数据量比较小，需要重新设定主分片；</li>
+<li>索引从Hot 移动到 Warm后，需要降低主分片数。</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>会使用和索引源相同的配置创建一个新的索引，仅仅降低主分片数。源分片数必须是目标分片数的倍数。如果源分片数是素数，目标分片数只能为1；如果文件系统支持硬链接，会将Segments 硬连接到目标索引，所以性能好（相比较于Reindex）。完成后，可以删除源索引。</p>
+</blockquote>
+<blockquote>
+<p>使用要求：</p>
+<ol>
+<li>分片必须只读；</li>
+<li>所有分片必须在同一个节点上；</li>
+<li>集群健康状态为 Green。</li>
+</ol>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">my_source_index/_shrink/my_target_index</span>
+{
+  <span style="color:#f92672">&#34;settings&#34;</span>: {
+    <span style="color:#f92672">&#34;index.number_of_replicas&#34;</span>: <span style="color:#ae81ff">0</span>,
+    <span style="color:#f92672">&#34;index.number_of_shards&#34;</span>: <span style="color:#ae81ff">2</span>,
+    <span style="color:#f92672">&#34;index.codec&#34;</span>: <span style="color:#e6db74">&#34;best_compression&#34;</span>
+  },
+  <span style="color:#f92672">&#34;aliases&#34;</span>: {
+    <span style="color:#f92672">&#34;my_search_indices&#34;</span>: {}
+  }
+}
+</code></pre></div></li>
+<li>
+<p>Split Index</p>
+<blockquote>
+<p>可以扩大主分片个数。使用要求：</p>
+<ol>
+<li>目标索引必须不存在；</li>
+<li>目标分片数是源分片数倍数；</li>
+<li>源索引分片数小于目标索引；</li>
+<li>分片必须只读；</li>
+<li>相应分片会被复制到同样的节点。</li>
+</ol>
+</blockquote>
+<pre tabindex="0"><code>POST my_source_index/_split/my_target_index
+{
+  &quot;settings&quot;: {
+    &quot;index.number_of_shards&quot;: 8,
+    &quot;index.number_of_replicas&quot;:0
+  }
+}
+</code></pre></li>
+<li>
+<p>Rollover Index</p>
+<blockquote>
+<p>类似 Log4J 记录日志的方式，索引尺寸或者时间超过一定值后，创建新的索引。当满足一系列的条件（存活的时间 / 最大文档数 / 最大的文件尺寸），Rollver API 支持将一个 Alias 指向一个新的索引。</p>
+</blockquote>
+<blockquote>
+<p>Rollover不会自动触发，一般需要和Index Lifecycle Management Policies 结合使用。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 不设定 is_write_true
+</span><span style="color:#75715e">// 名字符合命名规范，以-数字结尾
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">/nginx-logs</span><span style="color:#ae81ff">-000001</span>
+{
+  <span style="color:#f92672">&#34;aliases&#34;</span>: {
+    <span style="color:#f92672">&#34;nginx_logs_write&#34;</span>: {}
+  }
+}
+<span style="color:#75715e">// 多于5条的文档会被移动到nginx-logs-000002索引，且nginx-logs-000001不再有别名
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/nginx_logs_write/_rollover</span>
+{
+  <span style="color:#f92672">&#34;conditions&#34;</span>: {
+    <span style="color:#f92672">&#34;max_age&#34;</span>:   <span style="color:#e6db74">&#34;1d&#34;</span>,
+    <span style="color:#f92672">&#34;max_docs&#34;</span>:  <span style="color:#ae81ff">5</span>,
+    <span style="color:#f92672">&#34;max_size&#34;</span>:  <span style="color:#e6db74">&#34;5gb&#34;</span>
+  }
+}
+<span style="color:#75715e">// 设置 is_write_index
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">apache-logs</span><span style="color:#ae81ff">1</span>
+{
+  <span style="color:#f92672">&#34;aliases&#34;</span>: {
+    <span style="color:#f92672">&#34;apache_logs&#34;</span>: {
+      <span style="color:#f92672">&#34;is_write_index&#34;</span>:<span style="color:#66d9ef">true</span>
+    }
+  }
+}
+
+<span style="color:#75715e">// 需要指定 target 的名字
+</span><span style="color:#75715e">// 多于1条的文档会被移动到apache-logs2索引，但是前面设置了is_write_index，apache-logs1依然有别名apache_logs，但是新的数据只会写入apache-logs2
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">/apache_logs/_rollover/apache-logs</span><span style="color:#ae81ff">2</span>
+{
+  <span style="color:#f92672">&#34;conditions&#34;</span>: {
+    <span style="color:#f92672">&#34;max_age&#34;</span>:   <span style="color:#e6db74">&#34;1d&#34;</span>,
+    <span style="color:#f92672">&#34;max_docs&#34;</span>:  <span style="color:#ae81ff">1</span>,
+    <span style="color:#f92672">&#34;max_size&#34;</span>:  <span style="color:#e6db74">&#34;5gb&#34;</span>
+  }
+}
+</code></pre></div></li>
+<li>
+<p>Rollup Index</p>
+<blockquote>
+<p>对数据进行处理后，重新写入，减少数据量</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="时间序列索引">
+  时间序列索引
+  <a class="anchor" href="#%e6%97%b6%e9%97%b4%e5%ba%8f%e5%88%97%e7%b4%a2%e5%bc%95">#</a>
+</h2>
+<ul>
+<li>特点：索引中的数据随着时间持续不断增长</li>
+<li>优势：按照时间序列划分索引，会使得管理更加简单。例如：完整删除一个索引，性能比 delete by query好</li>
+<li>挑战：自动化管理，减少人工操作（从Hot 移动到 Warm；定期关闭或者删除索引）</li>
+<li>生命周期常见的阶段
+<ul>
+<li>Hot：索引还存在着大量的读写操作；</li>
+<li>Warm：索引不存在写操作，还有被查询的需要；</li>
+<li>Cold：数据不存在写操作，读操作也不多；</li>
+<li>Delete：索引不再需要，可以被安全删除。</li>
+</ul>
+</li>
+</ul>
+<h4 id="index-lifecycle-management">
+  Index Lifecycle Management
+  <a class="anchor" href="#index-lifecycle-management">#</a>
+</h4>
+<blockquote>
+<p>Elasticsearch 6.6 推出的新功能，基于 X-Pack Basic License，可免费使用。</p>
+<p>引入Policy、Phase、Action概念。</p>
+</blockquote>
+<p><img src="/images/es_pic/ilm.png" alt="" /></p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#索引管理api">索引管理API</a></li>
+    <li><a href="#时间序列索引">时间序列索引</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
