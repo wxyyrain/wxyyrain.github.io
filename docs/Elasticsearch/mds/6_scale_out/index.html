@@ -1,0 +1,1018 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="常见的集群部署方式 #  单一职责节点 #   在开发环境中，一个节点可承担多种角色。在生产环境，根据数据量，写入和查询的吞吐量，选择合适的部署方式，建议设置单一角色节点（dedicated node）。
+一个节点在默认情况下会同时扮演：master eligible、data node、coordinating node 和 ingest node，通过参数配置，让一个节点只承担一个角色。
+   参数配置
+   单一节点 配置     Master node.master: true、node.ingest: false、node.data: false   Data node.master: false、node.ingest: false、node.data: true   Coordinate node.master: false、node.ingest: true、node.data: false   Ingest node.master: false、node.ingest: false、node.data: false      职责分离的优势
+ 对于不同角色的节点，可以使用不同的配置。
+   Dedicated master eligible nodes">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="水平扩展集群" />
+<meta property="og:description" content="常见的集群部署方式 #  单一职责节点 #   在开发环境中，一个节点可承担多种角色。在生产环境，根据数据量，写入和查询的吞吐量，选择合适的部署方式，建议设置单一角色节点（dedicated node）。
+一个节点在默认情况下会同时扮演：master eligible、data node、coordinating node 和 ingest node，通过参数配置，让一个节点只承担一个角色。
+   参数配置
+   单一节点 配置     Master node.master: true、node.ingest: false、node.data: false   Data node.master: false、node.ingest: false、node.data: true   Coordinate node.master: false、node.ingest: true、node.data: false   Ingest node.master: false、node.ingest: false、node.data: false      职责分离的优势
+ 对于不同角色的节点，可以使用不同的配置。
+   Dedicated master eligible nodes" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2021-12-30T22:20:36+08:00" />
+<meta property="article:modified_time" content="2021-12-30T22:20:36+08:00" />
+
+<title>水平扩展集群 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.66f77fe6d3d527a8b25a956c6f38abbc8b2fc882f63bc32f784bafc5f05a15b0.js" integrity="sha256-Zvd/5tPVJ6iyWpVsbzirvIsvyIL2O8MveEuvxfBaFbA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class=" active">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>MySQL</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/0_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Distribute</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>水平扩展集群</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#常见的集群部署方式">常见的集群部署方式</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#shard-filtering">Shard Filtering</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分片设计及管理">分片设计及管理</a></li>
+    <li><a href="#集群容量规划">集群容量规划</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="常见的集群部署方式">
+  常见的集群部署方式
+  <a class="anchor" href="#%e5%b8%b8%e8%a7%81%e7%9a%84%e9%9b%86%e7%be%a4%e9%83%a8%e7%bd%b2%e6%96%b9%e5%bc%8f">#</a>
+</h2>
+<h4 id="单一职责节点">
+  单一职责节点
+  <a class="anchor" href="#%e5%8d%95%e4%b8%80%e8%81%8c%e8%b4%a3%e8%8a%82%e7%82%b9">#</a>
+</h4>
+<blockquote>
+<p>在开发环境中，一个节点可承担多种角色。在生产环境，根据数据量，写入和查询的吞吐量，选择合适的部署方式，建议设置单一角色节点（dedicated node）。</p>
+<p>一个节点在默认情况下会同时扮演：master eligible、data node、coordinating node 和 ingest node，通过参数配置，让一个节点只承担一个角色。</p>
+</blockquote>
+<ul>
+<li>
+<p>参数配置</p>
+<table>
+<thead>
+<tr>
+<th>单一节点</th>
+<th>配置</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Master</td>
+<td>node.master: true、node.ingest: false、node.data: false</td>
+</tr>
+<tr>
+<td>Data</td>
+<td>node.master: false、node.ingest: false、node.data: true</td>
+</tr>
+<tr>
+<td>Coordinate</td>
+<td>node.master: false、node.ingest: true、node.data: false</td>
+</tr>
+<tr>
+<td>Ingest</td>
+<td>node.master: false、node.ingest: false、node.data: false</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>职责分离的优势</p>
+<blockquote>
+<p>对于不同角色的节点，可以使用不同的配置。</p>
+</blockquote>
+<ul>
+<li>
+<p>Dedicated master eligible nodes</p>
+<blockquote>
+<p>负责集群状态的管理，使用低配置的CPU、RAM和磁盘。</p>
+</blockquote>
+<blockquote>
+<p>从高可用 &amp; 避免脑裂的角度出发，一般在生产环境中配置3台；一个集群只有一台活跃的主节点。如果与数据节点、Coordinate 节点混合部署，数据节点相对有比较大的内存占用，Coordinate 节点有时候可能会有开销很高的查询，导致OOM，这些都有可能影响Master 节点，导致集群不稳定。</p>
+</blockquote>
+</li>
+<li>
+<p>Dedicated data nodes</p>
+<blockquote>
+<p>负责数据的存储及处理客户端请求，使用高配置的CPU、RAM和磁盘。</p>
+</blockquote>
+</li>
+<li>
+<p>Dedicated ingest nodes</p>
+<blockquote>
+<p>负责数据处理，使用高配置的CPU、中等配置的RAM、低配置的磁盘。</p>
+</blockquote>
+</li>
+<li>
+<p>Dedicated Coordinating Only Node</p>
+<blockquote>
+<ol>
+<li>扮演 Load Balancers，降低 Master 和 Data Nodes 的负载；</li>
+<li>负责搜索结果的Gather/Reduce。</li>
+</ol>
+<p>生产环境中，建议为一些大的集群配置Coordinating Only Node，使用中高配置的CPU、中高配置的RAM、低配置的磁盘。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="部署方式">
+  部署方式
+  <a class="anchor" href="#%e9%83%a8%e7%bd%b2%e6%96%b9%e5%bc%8f">#</a>
+</h4>
+<ul>
+<li>
+<p>增加节点，水平扩展</p>
+<blockquote>
+<p>当磁盘容量无法满足需求时，可以增加数据节点；磁盘读写压力大时，增加数据节点。</p>
+</blockquote>
+<p><img src="/images/es_pic/scale_out1.png" alt="" /></p>
+</li>
+<li>
+<p>Coordinate Only Node</p>
+<blockquote>
+<p>当系统中有大量的复杂查询及聚合的时候，增加Coordinating节点，增加查询性能。LB指的是loadbalance。</p>
+</blockquote>
+<p><img src="/images/es_pic/scale_out2.png" alt="" /></p>
+</li>
+<li>
+<p>读写分离</p>
+<p><img src="/images/es_pic/scale_out3.png" alt="" /></p>
+</li>
+<li>
+<p>在集群中部署kibana</p>
+<blockquote>
+<p>官方建议kibana 安装到Coordinating node。</p>
+</blockquote>
+<p><img src="/images/es_pic/scale_out4.png" alt="" /></p>
+</li>
+<li>
+<p>异地多活的部署</p>
+<blockquote>
+<p>Global Traffic Manager，一种负载均衡。</p>
+</blockquote>
+<p><img src="/images/es_pic/scale_out5.png" alt="" /></p>
+</li>
+</ul>
+<h2 id="shard-filtering">
+  Shard Filtering
+  <a class="anchor" href="#shard-filtering">#</a>
+</h2>
+<blockquote>
+<p>通过设置和标记，可以很好的空值分片的分配。</p>
+<p>node.attr - 标记节点</p>
+<p>Index.routing.allocation - 分配索引到节点</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>设置</th>
+<th>分配索引节点，节点的属性规则</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Index.routing.allocation.include.{attr}</td>
+<td>至少包含一个值</td>
+</tr>
+<tr>
+<td>Index.routing.allocation.exclude.{attr}</td>
+<td>不能包含任何一个值</td>
+</tr>
+<tr>
+<td>Index.routing.allocation.require.{attr}</td>
+<td>所有值都需要包含</td>
+</tr>
+</tbody>
+</table>
+<h4 id="hot--warm-architecture">
+  Hot &amp; Warm Architecture
+  <a class="anchor" href="#hot--warm-architecture">#</a>
+</h4>
+<blockquote>
+<p>数据通常不会有Update 操作：适用于Time Based 索引数据（生命周期管理），同时数据量比较大的场景。</p>
+</blockquote>
+<ul>
+<li>
+<p>Hot Nodes</p>
+<blockquote>
+<p>用于数据的写入，Indexing 对 CPU 和 IO 都有很高的要求，所以需要使用高配置的机器，存储的性能要好，建议使用SSD。</p>
+</blockquote>
+</li>
+<li>
+<p>Warm Nodes</p>
+<blockquote>
+<p>用于保存只读的索引，比较旧的数据，通常使用大容量的磁盘（通常是Spinning Disks）。</p>
+</blockquote>
+</li>
+<li>
+<p>配置</p>
+</li>
+</ul>
+<blockquote>
+<p>使用Shard Filtering，分为一下几步：</p>
+</blockquote>
+<ol>
+<li>
+<p>标记节点（Tagging）</p>
+<blockquote>
+<p>通过“node.attr”来标记一个节点，节点的attribute 可以是任何的key/value，可以通过elasticsearch.yml 或者通过 -E 命令指定。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 标记一个 Hot 节点</span>
+bin/elasticsearch  -E node.name<span style="color:#f92672">=</span>hotnode -E cluster.name<span style="color:#f92672">=</span>cluster1 -E path.data<span style="color:#f92672">=</span>hot_data -E node.attr.my_node_type<span style="color:#f92672">=</span>hot
+
+<span style="color:#75715e"># 标记一个 warm 节点</span>
+bin/elasticsearch  -E node.name<span style="color:#f92672">=</span>warmnode -E cluster.name<span style="color:#f92672">=</span>cluster1 -E path.data<span style="color:#f92672">=</span>warm_data -E node.attr.my_node_type<span style="color:#f92672">=</span>warm
+
+<span style="color:#75715e"># 查看节点</span>
+GET /_cat/nodeattrs?v
+</code></pre></div></li>
+<li>
+<p>配置索引到Hot Node</p>
+<blockquote>
+<p>创建索引时，指定将其创建在 hot节点上。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">logs</span><span style="color:#ae81ff">-2019-06-27</span>
+{
+  <span style="color:#f92672">&#34;settings&#34;</span>:{
+    <span style="color:#f92672">&#34;number_of_shards&#34;</span>:<span style="color:#ae81ff">2</span>,
+    <span style="color:#f92672">&#34;number_of_replicas&#34;</span>:<span style="color:#ae81ff">0</span>,
+    <span style="color:#f92672">&#34;index.routing.allocation.require.my_node_type&#34;</span>:<span style="color:#e6db74">&#34;hot&#34;</span>
+  }
+}
+
+<span style="color:#75715e">// 查看分片信息
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">_cat/shards?v</span>
+</code></pre></div></li>
+<li>
+<p>配置索引到Warm Node</p>
+<blockquote>
+<p>将某个索引移动到warm node。</p>
+<p>index.routing.allocation 是一个索引级别的 dynamic setting，可以通过API 在后期进行设定。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">logs</span><span style="color:#ae81ff">-2019-06-27</span><span style="color:#960050;background-color:#1e0010">/_settings</span>
+{  
+  <span style="color:#f92672">&#34;index.routing.allocation.require.my_node_type&#34;</span>:<span style="color:#e6db74">&#34;warm&#34;</span>
+}
+</code></pre></div></li>
+</ol>
+<h4 id="rack-awareness">
+  Rack Awareness
+  <a class="anchor" href="#rack-awareness">#</a>
+</h4>
+<blockquote>
+<p>ES 节点可能分布在不同的机架，当一个机架断电，可能会同时丢失几个节点。如果一个索引相同的主分片和副本分片，同时在这个机架上，就可能导致数据丢失；通过Rack Awareness的机制，就可以尽可能避免将同一个索引的主副分片分配在一个机架的节点上。</p>
+<p>如下图，如果Rack 1断电，那么P0/R0对应的索引可能产生数据丢失。</p>
+</blockquote>
+<p><img src="/images/es_pic/rack_awareness.png" alt="" /></p>
+<ul>
+<li>配置</li>
+</ul>
+<blockquote>
+<p>与Hot &amp; Warm Architecture配置类似。</p>
+</blockquote>
+<ol>
+<li>
+<p>标记Rack 节点</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 标记一个 rack 1</span>
+bin/elasticsearch  -E node.name<span style="color:#f92672">=</span>node1 -E cluster.name<span style="color:#f92672">=</span>geektime -E path.data<span style="color:#f92672">=</span>node1_data -E node.attr.my_rack_id<span style="color:#f92672">=</span>rack1
+
+<span style="color:#75715e"># 标记一个 rack 2</span>
+bin/elasticsearch  -E node.name<span style="color:#f92672">=</span>node2 -E cluster.name<span style="color:#f92672">=</span>geektime -E path.data<span style="color:#f92672">=</span>node2_data -E node.attr.my_rack_id<span style="color:#f92672">=</span>rack2
+
+</code></pre></div></li>
+<li>
+<p>配置集群</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 这样设置后，ES会自动把主分片和副本分片发送到不同的rack上
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">_cluster/settings</span>
+{
+  <span style="color:#f92672">&#34;persistent&#34;</span>: {
+    <span style="color:#f92672">&#34;cluster.routing.allocation.awareness.attributes&#34;</span>: <span style="color:#e6db74">&#34;my_rack_id&#34;</span>
+  }
+}
+</code></pre></div></li>
+<li>
+<p>Force Awareness</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">_cluster/settings</span>
+{
+  <span style="color:#f92672">&#34;persistent&#34;</span>: {
+    <span style="color:#f92672">&#34;cluster.routing.allocation.awareness.attributes&#34;</span>: <span style="color:#e6db74">&#34;my_rack_id&#34;</span>,
+    <span style="color:#75715e">// 强制要求主副本分片分散到rack1和rack2上面，如果只有rack1节点，那么索引分片无法正常分配
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;cluster.routing.allocation.awareness.force.my_rack_id.values&#34;</span>: <span style="color:#e6db74">&#34;rack1,rack2&#34;</span>
+  }
+}
+
+<span style="color:#75715e">// 查看分片无法正常分配原因
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">_cluster/allocation/explain?pretty</span>
+</code></pre></div></li>
+</ol>
+<h2 id="分片设计及管理">
+  分片设计及管理
+  <a class="anchor" href="#%e5%88%86%e7%89%87%e8%ae%be%e8%ae%a1%e5%8f%8a%e7%ae%a1%e7%90%86">#</a>
+</h2>
+<blockquote>
+<p>之前会默认创建5个主分片，7.0开始，新创建一个索引时，默认只有一个主分片。</p>
+<p>单个分片，查询算分，聚合不准的问题都可以得以避免，但是单个索引，单个分片的时候，集群无法实现水平扩展。</p>
+</blockquote>
+<blockquote>
+<p>集群新加一个节点后，Elasticsearch 会自动进行分片的移动，也叫Shard Rebalanceing。比如一个索引有2个分片，本来有一个节点A，这是节点A就有俩分片，后来加了一个节点B，那么此时A和B各有一个分片。</p>
+</blockquote>
+<p><img src="/images/es_pic/shard1.png" alt="" /></p>
+<ul>
+<li>
+<p>当分片数 &gt; 节点数时</p>
+<blockquote>
+<p>一旦集群中有新的数据节点加入，分片可以自动进行分配，分配在重新分配时，系统不会有downtime。</p>
+</blockquote>
+</li>
+<li>
+<p>多分片的好处：一个索引如果分布在不同的节点，多个节点可以并行执行</p>
+<blockquote>
+<p>查询可以并行执行；数据写入可以分散到多个机器。</p>
+</blockquote>
+</li>
+<li>
+<p>分片过多所带来的的副作用</p>
+<blockquote>
+<p>每个分片是一个Lucene的索引，会使用机器资源。过多的分片会导致额外的性能开销。</p>
+<ol>
+<li>每次搜索的请求，需要从每个分片上获取数据；</li>
+<li>分片的meta 信息由Master node维护，过多会增加管理负担；</li>
+<li>经验值，控制分片总数在10w以内。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>确定主分片数</p>
+<ul>
+<li>
+<p>从存储的物理角度看：</p>
+<blockquote>
+<p>官方推荐：日志类应用，单个分片不要大于 50GB；搜索类应用，单个分片不要超过20GB。</p>
+</blockquote>
+</li>
+<li>
+<p>为什么要控制分片存储大小：</p>
+<blockquote>
+<p>提高Update 的性能；Merge 时，减少所需的资源；丢失节点后，具备更快的恢复速度 / 便于分片在集群内 Rebalancing。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>
+<p>确定副本分片数</p>
+<blockquote>
+<p>副本会降低数据的索引速度：有几份副本就有几倍的CPU资源消耗在索引上；会减缓对主分片的查询压力，但是会消耗同样的内存资源。</p>
+<p>如果机器资源充分，提高副本数，可以提高整体查询的QPS。</p>
+</blockquote>
+</li>
+<li>
+<p>调整分片总数设定，避免分配不均衡</p>
+<blockquote>
+<p>ES的分片策略会尽量保证节点上的分片数大致相同，但是，扩容的新节点没有数据，可能导致新索引集中在新的节点，热点数据过于集中，可能产生性能问题。</p>
+</blockquote>
+<ul>
+<li>index.routing.allocation.total_shards_per_node：设置某个索引每个节点可以有几个分片。</li>
+<li>cluster.routing.allocation.total_shards_per_node：全局配置。</li>
+</ul>
+</li>
+</ul>
+<h2 id="集群容量规划">
+  集群容量规划
+  <a class="anchor" href="#%e9%9b%86%e7%be%a4%e5%ae%b9%e9%87%8f%e8%a7%84%e5%88%92">#</a>
+</h2>
+<blockquote>
+<p>规划上需要保持一定的余量，当负载出现波动，节点出现丢失，还能正常运行。</p>
+<p>做容量规划时，一些需要考虑的因素：</p>
+<ol>
+<li>机器的软硬件配置；</li>
+<li>单条文档的尺寸/ 文档的总数据量 / 索引的总数据量 （time base 数据保留的时间）/ 副本分片数；</li>
+<li>文档是如何写入的（Bulk的尺寸）；</li>
+<li>文档的复杂度，文档是如何进行读取的。</li>
+</ol>
+</blockquote>
+<h4 id="评估业务的性能需求">
+  评估业务的性能需求
+  <a class="anchor" href="#%e8%af%84%e4%bc%b0%e4%b8%9a%e5%8a%a1%e7%9a%84%e6%80%a7%e8%83%bd%e9%9c%80%e6%b1%82">#</a>
+</h4>
+<ul>
+<li>
+<p>数据吞吐及性能需求</p>
+<blockquote>
+<p>数据写入的吞吐量，每秒要求写入多少数据；查询的吞吐量；单挑查询可接受的最大返回时间。</p>
+</blockquote>
+</li>
+<li>
+<p>了解你的数据</p>
+<blockquote>
+<p>数据的格式和数据的Mapping；实际的查询和聚合长的是什么样的。</p>
+</blockquote>
+</li>
+<li>
+<p>应用分类</p>
+<blockquote>
+<ol>
+<li>
+<p>搜索：固定大小的数据集。搜索的数据集增长相对比较缓慢。</p>
+</li>
+<li>
+<p>日志：基于时间序列的数据。使用 ES 存放日志与性能指标。数据每天不断写入，增长速度较快；结合 Warm Node 做数据的老化处理。</p>
+</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>硬件配置</p>
+<ul>
+<li>选择合理的硬件，数据节点尽可能使用 SSD；</li>
+<li>搜索等性能要求高的场景，建议SSD；按照1 ： 10的比例配置内存和硬盘；</li>
+<li>日志类和查询并发低的场景，可以考虑使用机械硬盘存储；按照1:50的比例配置内存和硬盘；</li>
+<li>单节点数据建议控制在 2 TB以内，最大不建议超过5 TB；</li>
+<li>JVM 配置机器内存的一半， JVM 内存配置不建议超过32G。</li>
+</ul>
+</li>
+<li>
+<p>部署方式</p>
+<blockquote>
+<p>按需选择合理的部署方式：如果考虑可靠性高可用，建议部署3台 dedicated 的Master 节点；如果有复杂的查询和聚合，建议设置Coordinating 节点。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="搜索类应用">
+  搜索类应用
+  <a class="anchor" href="#%e6%90%9c%e7%b4%a2%e7%b1%bb%e5%ba%94%e7%94%a8">#</a>
+</h4>
+<ul>
+<li>
+<p>一些案例：唱片信息库/ 产品信息</p>
+</li>
+<li>
+<p>特性</p>
+<blockquote>
+<p>被搜索的数据集很大，但是增长相对比较慢（不会有大量的写入），更关心搜索和聚合的读取性能。</p>
+<p>数据的重要性与时间范围无关。关注的是搜索的相关度。</p>
+</blockquote>
+</li>
+<li>
+<p>估算索引的数据量，确定分片的大小</p>
+<ul>
+<li>单个分片的数据不要超过20GB；</li>
+<li>可以通过增加副本分片，提高查询的吞吐量。</li>
+</ul>
+</li>
+<li>
+<p>拆分索引</p>
+<ul>
+<li>
+<p>如果业务上有大量的查询时基于一个字段进行Filter，该字段又是一个数量有限的枚举值（例如订单所在的地区），可以考虑以这个字段拆分为多个索引；</p>
+</li>
+<li>
+<p>如果在单个索引有大量的数据，可以考虑将索引拆分成多个索引；</p>
+<blockquote>
+<p>查询性能可以得到提高；如果要对多个索引进行查询，还是可以在查询中指定多个索引得以实现。</p>
+</blockquote>
+</li>
+<li>
+<p>如果业务上有大量的查询是基于一个字段进行Filter，该字段数值并不固定。</p>
+<blockquote>
+<p>可以启用Routing功能，按照filter 字段的值分布到集群中不同的shard，降低查询时相关的shard，提高CPU利用率。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="日志类应用">
+  日志类应用
+  <a class="anchor" href="#%e6%97%a5%e5%bf%97%e7%b1%bb%e5%ba%94%e7%94%a8">#</a>
+</h4>
+<ul>
+<li>
+<p>相关的用案：日志/ 指标 / 安全性相关的Events；舆情分析</p>
+</li>
+<li>
+<p>特性</p>
+<blockquote>
+<ol>
+<li>
+<p>每条数据都有时间戳；文档基本不会被更新（日志和指标数据）；</p>
+</li>
+<li>
+<p>用户更多的会查询近期的数据；对旧的数据查询相对较少；</p>
+</li>
+<li>
+<p>对数据的写入性能要求比较高。</p>
+</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>创建 time-based 索引</p>
+<blockquote>
+<ol>
+<li>在索引的名字中增加时间信息；</li>
+<li>按照 每天/ 每周 / 每月 的方式进行划分。</li>
+</ol>
+</blockquote>
+<ul>
+<li>
+<p>优势</p>
+<blockquote>
+<p>更加合理的组织索引，例如随着时间推移，便于对索引做的老化处理：</p>
+<ol>
+<li>利用 Hot &amp; Warm Architecture</li>
+<li>备份和删除以及删除的效率高。（delete by query 执行速度慢，底层也不会立即释放空间，而Merge时又很消耗资源）。</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="写入时间序列的数据基于-data-math-的方式">
+  写入时间序列的数据：基于 Data Math 的方式
+  <a class="anchor" href="#%e5%86%99%e5%85%a5%e6%97%b6%e9%97%b4%e5%ba%8f%e5%88%97%e7%9a%84%e6%95%b0%e6%8d%ae%e5%9f%ba%e4%ba%8e-data-math-%e7%9a%84%e6%96%b9%e5%bc%8f">#</a>
+</h4>
+<blockquote>
+<p>容易使用，但如果时间规则变化，需要重新部署代码。</p>
+<p>假设现在是2019-08-01T00:00:00</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>公式</th>
+<th>含义</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>&lt;logs-{now/d}&gt;</td>
+<td>logs-2022.01.01</td>
+</tr>
+<tr>
+<td>&lt;logs-{now{YYYY.MM}}&gt;</td>
+<td>logs-2022.01</td>
+</tr>
+<tr>
+<td>&lt;logs-{now/w}&gt;</td>
+<td>这周的开始</td>
+</tr>
+</tbody>
+</table>
+<blockquote>
+<p>另外可以通过别名的方式，更新每天的索引。</p>
+</blockquote>
+<h4 id="扩容">
+  扩容
+  <a class="anchor" href="#%e6%89%a9%e5%ae%b9">#</a>
+</h4>
+<ul>
+<li>
+<p>增加 Coordinating / Ingest Node</p>
+<blockquote>
+<p>解决CPU 和 内存开销问题。</p>
+</blockquote>
+</li>
+<li>
+<p>增加 Data Node</p>
+<blockquote>
+<p>解决存储的容量问题。为避免分配不均的问题，需要提前监控磁盘空间，提前清理数据或增加节点（70%）。</p>
+</blockquote>
+</li>
+</ul>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#常见的集群部署方式">常见的集群部署方式</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#shard-filtering">Shard Filtering</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分片设计及管理">分片设计及管理</a></li>
+    <li><a href="#集群容量规划">集群容量规划</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,818 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="倒排索引 #  核心组成 #    单词词典（Term Dictionary）
+ 记录所有文档的单词，记录单词到倒排列表的关联关系；一般比较大，可以通过B&#43;树或者哈希拉链法实现，以满足高性能的插入与查询。
+   倒排索引表（Posting List）
+ 记录了单词对应的文档集合，由倒排索引项组成。倒排索引项（Posting）：
+ 文档ID； 词频TF：该单词在文档中出现的次数，用于相关性评分； 位置（Position）：单词在文档中分词的位置。用于语句搜索（phrase query）； 偏移（Offset）：记录单词的开始结束位置，实现高亮显示。       默认使用 #   Elasticsearch的JSON文档中的每个字段，都有自己的倒排索引；
+可以指定对某些字段不做索引：优点：节省空间；缺点：字段无法被搜索。
+ 搜索的相关性 #  搜索是用户和搜索引擎的对话，用户关心的是搜索引擎结果的相关性：
+ 是否可以找到所有相关的内容 有多少不相关的内容被返回了 文档的打分是否合理 结合业务需求，平衡结果排  衡量相关性：
+ Precision（查准率）：尽可能返回较少无关文档 Recall（查全率）：尽量返回较多相关文档 Ranking：能否按照相关度排序   绿色代表应该被搜索到的结果，黄色代表不应该被搜索到的结果。
+ Precision = True Postive / (True and False Positives)
+Recall = True Postive / (True Positives &#43; False Negtives)">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="前置知识" />
+<meta property="og:description" content="倒排索引 #  核心组成 #    单词词典（Term Dictionary）
+ 记录所有文档的单词，记录单词到倒排列表的关联关系；一般比较大，可以通过B&#43;树或者哈希拉链法实现，以满足高性能的插入与查询。
+   倒排索引表（Posting List）
+ 记录了单词对应的文档集合，由倒排索引项组成。倒排索引项（Posting）：
+ 文档ID； 词频TF：该单词在文档中出现的次数，用于相关性评分； 位置（Position）：单词在文档中分词的位置。用于语句搜索（phrase query）； 偏移（Offset）：记录单词的开始结束位置，实现高亮显示。       默认使用 #   Elasticsearch的JSON文档中的每个字段，都有自己的倒排索引；
+可以指定对某些字段不做索引：优点：节省空间；缺点：字段无法被搜索。
+ 搜索的相关性 #  搜索是用户和搜索引擎的对话，用户关心的是搜索引擎结果的相关性：
+ 是否可以找到所有相关的内容 有多少不相关的内容被返回了 文档的打分是否合理 结合业务需求，平衡结果排  衡量相关性：
+ Precision（查准率）：尽可能返回较少无关文档 Recall（查全率）：尽量返回较多相关文档 Ranking：能否按照相关度排序   绿色代表应该被搜索到的结果，黄色代表不应该被搜索到的结果。
+ Precision = True Postive / (True and False Positives)
+Recall = True Postive / (True Positives &#43; False Negtives)" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-01-30T10:20:01+08:00" />
+<meta property="article:modified_time" content="2022-01-30T10:20:01+08:00" />
+
+<title>前置知识 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.66f77fe6d3d527a8b25a956c6f38abbc8b2fc882f63bc32f784bafc5f05a15b0.js" integrity="sha256-Zvd/5tPVJ6iyWpVsbzirvIsvyIL2O8MveEuvxfBaFbA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class=" active">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>MySQL</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/0_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Distribute</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>前置知识</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#倒排索引">倒排索引</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#搜索的相关性">搜索的相关性</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分词">分词</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="倒排索引">
+  倒排索引
+  <a class="anchor" href="#%e5%80%92%e6%8e%92%e7%b4%a2%e5%bc%95">#</a>
+</h2>
+<h4 id="核心组成">
+  核心组成
+  <a class="anchor" href="#%e6%a0%b8%e5%bf%83%e7%bb%84%e6%88%90">#</a>
+</h4>
+<ul>
+<li>
+<p>单词词典（Term Dictionary）</p>
+<blockquote>
+<p>记录所有文档的单词，记录单词到倒排列表的关联关系；一般比较大，可以通过B+树或者哈希拉链法实现，以满足高性能的插入与查询。</p>
+</blockquote>
+</li>
+<li>
+<p>倒排索引表（Posting List）</p>
+<blockquote>
+<p>记录了单词对应的文档集合，由倒排索引项组成。倒排索引项（Posting）：</p>
+<ul>
+<li>文档ID；</li>
+<li>词频TF：该单词在文档中出现的次数，用于相关性评分；</li>
+<li>位置（Position）：单词在文档中分词的位置。用于语句搜索（phrase query）；</li>
+<li>偏移（Offset）：记录单词的开始结束位置，实现高亮显示。</li>
+</ul>
+<blockquote>
+<p><img src="/images/es_pic/post_index.png?lastModify=1643509241" alt="lucene_index" /></p>
+</blockquote>
+</blockquote>
+</li>
+</ul>
+<h4 id="默认使用">
+  默认使用
+  <a class="anchor" href="#%e9%bb%98%e8%ae%a4%e4%bd%bf%e7%94%a8">#</a>
+</h4>
+<blockquote>
+<p>Elasticsearch的JSON文档中的每个字段，都有自己的倒排索引；</p>
+<p>可以指定对某些字段不做索引：优点：节省空间；缺点：字段无法被搜索。</p>
+</blockquote>
+<h2 id="搜索的相关性">
+  搜索的相关性
+  <a class="anchor" href="#%e6%90%9c%e7%b4%a2%e7%9a%84%e7%9b%b8%e5%85%b3%e6%80%a7">#</a>
+</h2>
+<p>搜索是用户和搜索引擎的对话，用户关心的是搜索引擎结果的相关性：</p>
+<ol>
+<li>是否可以找到所有相关的内容</li>
+<li>有多少不相关的内容被返回了</li>
+<li>文档的打分是否合理</li>
+<li>结合业务需求，平衡结果排</li>
+</ol>
+<p>衡量相关性：</p>
+<ol>
+<li>Precision（查准率）：尽可能返回较少无关文档</li>
+<li>Recall（查全率）：尽量返回较多相关文档</li>
+<li>Ranking：能否按照相关度排序</li>
+</ol>
+<p><img src="/images/es_pic/search_re.png" alt="" /></p>
+<blockquote>
+<p>绿色代表应该被搜索到的结果，黄色代表不应该被搜索到的结果。</p>
+</blockquote>
+<p>Precision = True Postive / (True and False Positives)</p>
+<p>Recall = True Postive / (True Positives + False Negtives)</p>
+<h4 id="相关性算分">
+  相关性算分
+  <a class="anchor" href="#%e7%9b%b8%e5%85%b3%e6%80%a7%e7%ae%97%e5%88%86">#</a>
+</h4>
+<ul>
+<li>搜索的相关性算分，描述了一个文档和查询语句的匹配程度。Elasticsearch会对每个匹配查询条件的结果进行算分_score；</li>
+<li>打分的本质是排序，需要把最符合用户需求的文档排在前面。ES5之前，默认的相关性算分采用TF-IDF，现在采用BM 25。</li>
+</ul>
+<h4 id="词频">
+  词频
+  <a class="anchor" href="#%e8%af%8d%e9%a2%91">#</a>
+</h4>
+<ul>
+<li>
+<p>Term Frequency：检索词在一篇文档中出现的频率，计算公式：
+TF = 检索词出现的次数 / 文档的总字数。</p>
+<blockquote>
+<p>度量一条查询和结果文档相关性的简单方法：简单将搜索中的每一个词的TF进行相加。比如说搜索&quot;区块链的应用&quot;，相关性 = TF（区块链） + TF（的） + TF（应用）。</p>
+</blockquote>
+</li>
+<li>
+<p>Stop word：有些词出现再多次也无需计算到相关性中。比如，的”在文档中出现了很多次，但是对贡献相关度几乎没有用处，不应该考虑他们的TF。</p>
+</li>
+</ul>
+<h4 id="逆文档频率">
+  逆文档频率
+  <a class="anchor" href="#%e9%80%86%e6%96%87%e6%a1%a3%e9%a2%91%e7%8e%87">#</a>
+</h4>
+<p>DF：检索词在所有文档中出现的频率。
+Inverse Document Frequency：简单说 = log（全部文档数/检索词出现过得文档总数）；</p>
+<blockquote>
+<p>假设搜索&quot;区块链的应用&quot;，“区块链”在相对较少的文档中出现；“应用”在相对比较多的文档中出现；“Stop Word”在大量文档中出现。所以“区块链”这个词比“应用”这个词共享度更高。</p>
+</blockquote>
+<p><img src="/images/es_pic/search_example.png" alt="" /></p>
+<p>TF-IDF本质就是将TF求和变成了加权求和：
+TF（区块链）* IDF（区块链） + IDF（的）* TF（的） + TF（应用）* IDF（应用）</p>
+<h4 id="tf-idf的概念">
+  TF-IDF的概念
+  <a class="anchor" href="#tf-idf%e7%9a%84%e6%a6%82%e5%bf%b5">#</a>
+</h4>
+<p>TF-IDF被公认为是信息检索领域最重要的发明；
+除了在信息检索，在文献分类和其他相关领域有这非常广泛的应用；
+IDF的概念，最早是剑桥大学的“斯巴克 琼斯”提出：</p>
+<blockquote>
+<p>1972年-“关键词特殊性的统计解释和它在文献检索中的应用”；但是没有理论上解释IDF应该使用log（全部文档数/检索词出现过得文档总数），而不是其他函数。也没有做进一步的研究。</p>
+</blockquote>
+<ul>
+<li>Lucene的TF-IDF评分公式：</li>
+</ul>
+<p><img src="/images/es_pic/tf_idf.png" alt="" /></p>
+<h4 id="bm25">
+  BM25
+  <a class="anchor" href="#bm25">#</a>
+</h4>
+<p><img src="/images/es_pic/bm25.png" alt="" /></p>
+<h4 id="控制算分">
+  控制算分
+  <a class="anchor" href="#%e6%8e%a7%e5%88%b6%e7%ae%97%e5%88%86">#</a>
+</h4>
+<blockquote>
+<p>Boosting 是控制相关度的一种手段，可以对索引、字段、或查询条件使用。</p>
+</blockquote>
+<p>参数boost的含义：</p>
+<ul>
+<li>当boost &gt; 1 时，打分的相关度相对性提升；</li>
+<li>当0&lt; boost &lt; 1时，打分的权重相对性降低；</li>
+<li>当boost &lt; 0时，贡献负分。</li>
+</ul>
+<h2 id="分词">
+  分词
+  <a class="anchor" href="#%e5%88%86%e8%af%8d">#</a>
+</h2>
+<h4 id="analysis与analyzer">
+  Analysis与Analyzer
+  <a class="anchor" href="#analysis%e4%b8%8eanalyzer">#</a>
+</h4>
+<ul>
+<li>Analysis</li>
+</ul>
+<blockquote>
+<p>文本分析是把全文本转换一系列单词（term/token）的过程，也叫分词。</p>
+</blockquote>
+<ul>
+<li>Analyzer</li>
+</ul>
+<blockquote>
+<p>Analysis通过Analyzer来实现。</p>
+</blockquote>
+<p>ES在数据写入时转换词条，匹配Query语句时也需要用相同的分析器对查询语句进行分析。</p>
+<h4 id="analyzer的组成">
+  Analyzer的组成
+  <a class="anchor" href="#analyzer%e7%9a%84%e7%bb%84%e6%88%90">#</a>
+</h4>
+<p><img src="/images/es_pic/analyzer.png" alt="" /></p>
+<ul>
+<li>Character Filters</li>
+</ul>
+<blockquote>
+<p>针对原始文本处理，例如去除html。</p>
+</blockquote>
+<ul>
+<li>Tokenizer</li>
+</ul>
+<blockquote>
+<p>按照规则切分为单词，比如按照空格。</p>
+</blockquote>
+<ul>
+<li>Token Filter</li>
+</ul>
+<blockquote>
+<p>将切分的单词进行加工，小写，删除stopwords（停用词），增加同义词。</p>
+</blockquote>
+<h4 id="es-内置的分词器">
+  ES 内置的分词器
+  <a class="anchor" href="#es-%e5%86%85%e7%bd%ae%e7%9a%84%e5%88%86%e8%af%8d%e5%99%a8">#</a>
+</h4>
+<ul>
+<li>
+<p>Standard Analyzer：默认分词器，按词切分，小写处理；</p>
+<p><img src="/images/es_pic/standard.png" alt="" /></p>
+</li>
+<li>
+<p>Simple Analyzer：按照非字母切分（符号被过滤），小写处理；</p>
+<p><img src="/images/es_pic/simple.png" alt="" /></p>
+</li>
+<li>
+<p>Stop Analyzer：小写处理，停用词过滤（the，a，is）；</p>
+<p><img src="/images/es_pic/stop.png" alt="" /></p>
+</li>
+<li>
+<p>Whitespace Analyzer：按照空格切分，不转小写；</p>
+<p><img src="/images/es_pic/whitespace.png" alt="" /></p>
+</li>
+<li>
+<p>Keyword Analyzer：不分词，直接将输入当做输出；</p>
+<p><img src="/images/es_pic/keyword.png" alt="" /></p>
+</li>
+<li>
+<p>Patter Analyzer：正则表达式，默认\W+（分字符分隔）；</p>
+<p><img src="/images/es_pic/patter.png" alt="" /></p>
+</li>
+<li>
+<p>Language：提供了30多种常见语言的分词器；</p>
+</li>
+<li>
+<p>Customer Analyzer：自定义分词器。</p>
+</li>
+</ul>
+<h4 id="_analyzer-api">
+  _analyzer API
+  <a class="anchor" href="#_analyzer-api">#</a>
+</h4>
+<ul>
+<li>
+<p>指定Analyzer进行测试</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">GET /_analyze
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;analyzer&#34;</span> : <span style="color:#e6db74">&#34;standard&#34;</span>,
+  <span style="color:#e6db74">&#34;text&#34;</span> : <span style="color:#e6db74">&#34;Master Elasticsearch, elasticsearch in Action&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+<li>
+<p>指定索引的字段进行测试</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">POST 索引名/_analyze
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;field&#34;</span> : <span style="color:#e6db74">&#34;title&#34;</span>,
+  <span style="color:#e6db74">&#34;text&#34;</span> : <span style="color:#e6db74">&#34;Master Elasticsearch, elasticsearch in Action&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+<li>
+<p>自定义分词器进行测试</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">POST /_analyze
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;tokenizer&#34;</span> : <span style="color:#e6db74">&#34;standard&#34;</span>,
+  <span style="color:#e6db74">&#34;filter&#34;</span> : <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;lowercase&#34;</span><span style="color:#f92672">]</span>,
+  <span style="color:#e6db74">&#34;text&#34;</span> : <span style="color:#e6db74">&#34;Master Elasticsearch, elasticsearch in Action&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+</ul>
+<h4 id="自然语言与查询recall">
+  自然语言与查询Recall
+  <a class="anchor" href="#%e8%87%aa%e7%84%b6%e8%af%ad%e8%a8%80%e4%b8%8e%e6%9f%a5%e8%af%a2recall">#</a>
+</h4>
+<p>当处理人类自然语言时，有些情况，尽管搜索和原文不完全匹配，但是希望搜到一些内容；Quick brown fox 和 fast brown fox / Jumping fox 和 Jumped foxes。</p>
+<p>一些可采取的优化：归一化词元：清除变音符号；抽取词根：清除单复数和时态差异；包含同义词；拼写错误：拼写错误，或者同音异形词。</p>
+<h4 id="多语言混合的挑战">
+  多语言混合的挑战
+  <a class="anchor" href="#%e5%a4%9a%e8%af%ad%e8%a8%80%e6%b7%b7%e5%90%88%e7%9a%84%e6%8c%91%e6%88%98">#</a>
+</h4>
+<ul>
+<li>
+<p>一些具体的多语言场景</p>
+<blockquote>
+<p>不同索引使用不同的语言；同一索引中，不同的字段使用不同的语言；一个文档的一个字段内混合不同的语言。</p>
+</blockquote>
+</li>
+<li>
+<p>混合语言存在的一些挑战</p>
+<blockquote>
+<p>词干提取：以色列文档，包含了希伯来语、阿拉伯语、俄语和英文；不正确的文档频率：英文为主的文章中，德文算分高（稀有）；需要判断用户搜索时使用的语言，语言识别。例如，根据语言，查询不同的索引。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="分词的挑战">
+  分词的挑战
+  <a class="anchor" href="#%e5%88%86%e8%af%8d%e7%9a%84%e6%8c%91%e6%88%98">#</a>
+</h4>
+<ul>
+<li>
+<p>英文分词</p>
+<blockquote>
+<p>You&rsquo;re分成一个还是多个？Half-backed</p>
+</blockquote>
+</li>
+<li>
+<p>中文分词</p>
+<blockquote>
+<p>分词标准：哈工大标准中，姓和名分开。HanLP是在一起的。具体情况需制定不同的标准；</p>
+<p>歧义（组合型歧义，交集型歧义，真歧义）：中华人民共和国/美国会通过对台收武法案/上海仁和服装厂。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="中文分词方法的演变">
+  中文分词方法的演变
+  <a class="anchor" href="#%e4%b8%ad%e6%96%87%e5%88%86%e8%af%8d%e6%96%b9%e6%b3%95%e7%9a%84%e6%bc%94%e5%8f%98">#</a>
+</h4>
+<ul>
+<li>
+<p>查字典</p>
+<blockquote>
+<p>最容易想到的分词方法（北京航空大学的梁南元教授提出）；一个句子从左到右扫描一遍。遇到有的词就标示出来。找到复合词，就找最长的；不认识的字符就分割成单个字词。</p>
+</blockquote>
+</li>
+<li>
+<p>最小词数的分词理论</p>
+<blockquote>
+<p>哈工大王晓龙博士把查字典的方法理论化，一句话应该分成数量最少的词串；遇到二义性的分隔，无能为力（例如：发展中国家、上海大学城书店）；用各种文化规则来解决二义性，都并不成功。</p>
+</blockquote>
+</li>
+<li>
+<p>统计语言模型</p>
+<blockquote>
+<p>1990年前后，清华大学电子工程系郭进博士。解决了二义性问题，将中文分词的错误率降低了一个数量级。概率问题，动态规划 + 利用维特比算法快速找到最佳分词。</p>
+</blockquote>
+</li>
+<li>
+<p>基于统计的机器学习算法</p>
+<blockquote>
+<p>这类目前常用的算法是HMM、CRF、SVM、深度学习等算法；</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="中文分词器现状">
+  中文分词器现状
+  <a class="anchor" href="#%e4%b8%ad%e6%96%87%e5%88%86%e8%af%8d%e5%99%a8%e7%8e%b0%e7%8a%b6">#</a>
+</h4>
+<blockquote>
+<p>中文分词器以统计语言模型为基础，经过几十年的发展，今天基本已经可以看做是一个已经解决的问题。不同分词器的好坏，主要的差别在于数据的使用和工程使用的精度。常见的分词器都是使用机器学习算法和词典相结合，一方面能够提高分词准确率，另一方面能够改善领域适应性。</p>
+</blockquote>
+<h4 id="一些中文分词器">
+  一些中文分词器
+  <a class="anchor" href="#%e4%b8%80%e4%ba%9b%e4%b8%ad%e6%96%87%e5%88%86%e8%af%8d%e5%99%a8">#</a>
+</h4>
+<ul>
+<li>
+<p>HanLP</p>
+</li>
+<li>
+<p>IK</p>
+</li>
+<li>
+<p>Pinyin</p>
+</li>
+</ul>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#倒排索引">倒排索引</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#搜索的相关性">搜索的相关性</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分词">分词</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

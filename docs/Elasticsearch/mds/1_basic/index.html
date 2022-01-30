@@ -1,0 +1,1389 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="基本概念 #  文档（Document） #    Elasticsearch是面向文档的，文档是所有课搜索数据的最小单位；
+ 可以理解为关系型数据库中的一条记录。
+   文档会被序列化成JSON格式，保存在Elasticsearch 中；
+ JSON对象由字段组成；每个字段都有对应的字段类型（字符串/数值/布尔/日期/二进制/范围类型）。
+   每个文档都有一个Unique ID。
+ 可以自己指定ID；或者通过Elasticsearch自动生成。
+   JSON文档 #   字段的类型可以通过指定或者通过Elasticsearch自动推算； 支持数组/嵌套。  文档元数据 #   _index：文档所属的索引名； _type：文档所属的类型名； _id：文档的唯一ID； _source：文档的原始JSON数据； _all：整合所有字段内容到该字段，已被废除； _version：文档的版本信息； _score：相关性打分。  Response元数据 #   took：花费的时间； total：符合条件的总文档数； hits：结果集，默认前十个文档； _index：索引名； _id：文档的id； _score：相关度评分； _source：文档原始信息。  索引（Index） #   索引是文档的容器，是一类文档的集合。Index体现了逻辑空间的概念：每个索引都有自己的Mapping定义，用于定义包含的文档字段名和字段类型；Shard体现了物理空间的概念：索引中的数据分散在Shard上。
+   Mapping定义文档字段的类型
+  Setting定义不同的数据分布">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="基本使用" />
+<meta property="og:description" content="基本概念 #  文档（Document） #    Elasticsearch是面向文档的，文档是所有课搜索数据的最小单位；
+ 可以理解为关系型数据库中的一条记录。
+   文档会被序列化成JSON格式，保存在Elasticsearch 中；
+ JSON对象由字段组成；每个字段都有对应的字段类型（字符串/数值/布尔/日期/二进制/范围类型）。
+   每个文档都有一个Unique ID。
+ 可以自己指定ID；或者通过Elasticsearch自动生成。
+   JSON文档 #   字段的类型可以通过指定或者通过Elasticsearch自动推算； 支持数组/嵌套。  文档元数据 #   _index：文档所属的索引名； _type：文档所属的类型名； _id：文档的唯一ID； _source：文档的原始JSON数据； _all：整合所有字段内容到该字段，已被废除； _version：文档的版本信息； _score：相关性打分。  Response元数据 #   took：花费的时间； total：符合条件的总文档数； hits：结果集，默认前十个文档； _index：索引名； _id：文档的id； _score：相关度评分； _source：文档原始信息。  索引（Index） #   索引是文档的容器，是一类文档的集合。Index体现了逻辑空间的概念：每个索引都有自己的Mapping定义，用于定义包含的文档字段名和字段类型；Shard体现了物理空间的概念：索引中的数据分散在Shard上。
+   Mapping定义文档字段的类型
+  Setting定义不同的数据分布" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-01-22T10:58:18+08:00" />
+<meta property="article:modified_time" content="2022-01-22T10:58:18+08:00" />
+
+<title>基本使用 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.66f77fe6d3d527a8b25a956c6f38abbc8b2fc882f63bc32f784bafc5f05a15b0.js" integrity="sha256-Zvd/5tPVJ6iyWpVsbzirvIsvyIL2O8MveEuvxfBaFbA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class=" active">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>MySQL</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/0_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Distribute</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>基本使用</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#基本概念">基本概念</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#基本操作">基本操作</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#search-api">Search API</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#mapping">Mapping</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="基本概念">
+  基本概念
+  <a class="anchor" href="#%e5%9f%ba%e6%9c%ac%e6%a6%82%e5%bf%b5">#</a>
+</h2>
+<h4 id="文档document">
+  文档（Document）
+  <a class="anchor" href="#%e6%96%87%e6%a1%a3document">#</a>
+</h4>
+<ul>
+<li>
+<p>Elasticsearch是面向文档的，文档是所有课搜索数据的最小单位；</p>
+<blockquote>
+<p>可以理解为关系型数据库中的一条记录。</p>
+</blockquote>
+</li>
+<li>
+<p>文档会被序列化成JSON格式，保存在Elasticsearch 中；</p>
+<blockquote>
+<p>JSON对象由字段组成；每个字段都有对应的字段类型（字符串/数值/布尔/日期/二进制/范围类型）。</p>
+</blockquote>
+</li>
+<li>
+<p>每个文档都有一个Unique ID。</p>
+<blockquote>
+<p>可以自己指定ID；或者通过Elasticsearch自动生成。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="json文档">
+  JSON文档
+  <a class="anchor" href="#json%e6%96%87%e6%a1%a3">#</a>
+</h4>
+<ul>
+<li>字段的类型可以通过指定或者通过Elasticsearch自动推算；</li>
+<li>支持数组/嵌套。</li>
+</ul>
+<h4 id="文档元数据">
+  文档元数据
+  <a class="anchor" href="#%e6%96%87%e6%a1%a3%e5%85%83%e6%95%b0%e6%8d%ae">#</a>
+</h4>
+<ul>
+<li>_index：文档所属的索引名；</li>
+<li>_type：文档所属的类型名；</li>
+<li>_id：文档的唯一ID；</li>
+<li>_source：文档的原始JSON数据；</li>
+<li>_all：整合所有字段内容到该字段，已被废除；</li>
+<li>_version：文档的版本信息；</li>
+<li>_score：相关性打分。</li>
+</ul>
+<h4 id="response元数据">
+  Response元数据
+  <a class="anchor" href="#response%e5%85%83%e6%95%b0%e6%8d%ae">#</a>
+</h4>
+<ul>
+<li>took：花费的时间；</li>
+<li>total：符合条件的总文档数；</li>
+<li>hits：结果集，默认前十个文档；</li>
+<li>_index：索引名；</li>
+<li>_id：文档的id；</li>
+<li>_score：相关度评分；</li>
+<li>_source：文档原始信息。</li>
+</ul>
+<h4 id="索引index">
+  索引（Index）
+  <a class="anchor" href="#%e7%b4%a2%e5%bc%95index">#</a>
+</h4>
+<blockquote>
+<p>索引是文档的容器，是一类文档的集合。Index体现了逻辑空间的概念：每个索引都有自己的Mapping定义，用于定义包含的文档字段名和字段类型；Shard体现了物理空间的概念：索引中的数据分散在Shard上。</p>
+</blockquote>
+<ul>
+<li>
+<p>Mapping定义文档字段的类型</p>
+</li>
+<li>
+<p>Setting定义不同的数据分布</p>
+</li>
+<li>
+<p>Type</p>
+<blockquote>
+<p>7.0之前，一个Index可以设置多个Types；6.0开始，Type已经被Deprecated。7.0开始，一个索引只能创建一个Type-&quot;_doc&quot;。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="索引的不同语义">
+  索引的不同语义
+  <a class="anchor" href="#%e7%b4%a2%e5%bc%95%e7%9a%84%e4%b8%8d%e5%90%8c%e8%af%ad%e4%b9%89">#</a>
+</h4>
+<ul>
+<li>名词：一个Elasticsearch集群中，可以创建很多个不同的索引；</li>
+<li>动词：保存一个文档到Elasticsearch的过程也叫索引（indexing）；</li>
+<li>ES中，创建一个倒排索引的过程。名词：一个B树索引，一个倒排索引。</li>
+</ul>
+<h4 id="与关系型数据库对比">
+  与关系型数据库对比
+  <a class="anchor" href="#%e4%b8%8e%e5%85%b3%e7%b3%bb%e5%9e%8b%e6%95%b0%e6%8d%ae%e5%ba%93%e5%af%b9%e6%af%94">#</a>
+</h4>
+<table>
+<thead>
+<tr>
+<th>RDBMS</th>
+<th>Elasticsearch</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Table</td>
+<td>Index（Type）</td>
+</tr>
+<tr>
+<td>Row</td>
+<td>Document</td>
+</tr>
+<tr>
+<td>Column</td>
+<td>Field</td>
+</tr>
+<tr>
+<td>Schema</td>
+<td>Mapping</td>
+</tr>
+<tr>
+<td>SQL</td>
+<td>DSL</td>
+</tr>
+<tr>
+<td>高性能全文检索</td>
+<td>事务性/Join</td>
+</tr>
+</tbody>
+</table>
+<h2 id="基本操作">
+  基本操作
+  <a class="anchor" href="#%e5%9f%ba%e6%9c%ac%e6%93%8d%e4%bd%9c">#</a>
+</h2>
+<h4 id="rest-api">
+  Rest api
+  <a class="anchor" href="#rest-api">#</a>
+</h4>
+<ul>
+<li>
+<p>创建索引</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">PUT movies
+</code></pre></div></li>
+<li>
+<p>查看所有索引</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">_cat/indices
+</code></pre></div></li>
+<li>
+<p>查看索引相关信息</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">GET 索引名
+</code></pre></div></li>
+<li>
+<p>查看索引文档总数</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">GET 索引名/_count
+</code></pre></div></li>
+<li>
+<p>查看状态为绿的索引</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">GET /_cat/indices?v&amp;health<span style="color:#f92672">=</span>green
+</code></pre></div></li>
+<li>
+<p>按照文档个数排序</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">GET /_cat/indices?v&amp;s<span style="color:#f92672">=</span>docs.count:desc
+</code></pre></div></li>
+<li>
+<p>查看具体的字段</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">GET /_cat/indices/关键字*?pri&amp;v&amp;h<span style="color:#f92672">=</span>health,index,pri,rep,docs.count,mt
+</code></pre></div></li>
+<li>
+<p>占用多少内存</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">GET /_cat/indices?v&amp;h<span style="color:#f92672">=</span>i,tm&amp;s<span style="color:#f92672">=</span>tm:desc
+</code></pre></div></li>
+</ul>
+<h4 id="crud">
+  CRUD
+  <a class="anchor" href="#crud">#</a>
+</h4>
+<ul>
+<li>create document. 自动生成 _id</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">POST users/_doc
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;user&#34;</span> : <span style="color:#e6db74">&#34;Mike&#34;</span>,
+    <span style="color:#e6db74">&#34;post_date&#34;</span> : <span style="color:#e6db74">&#34;2019-04-15T14:12:12&#34;</span>,
+    <span style="color:#e6db74">&#34;message&#34;</span> : <span style="color:#e6db74">&#34;trying out Kibana&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><ul>
+<li>create document. 指定Id。如果id已经存在，报错</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">PUT users/_doc/1?op_type<span style="color:#f92672">=</span>create
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;user&#34;</span> : <span style="color:#e6db74">&#34;Jack&#34;</span>,
+    <span style="color:#e6db74">&#34;post_date&#34;</span> : <span style="color:#e6db74">&#34;2019-05-15T14:12:12&#34;</span>,
+    <span style="color:#e6db74">&#34;message&#34;</span> : <span style="color:#e6db74">&#34;trying out Elasticsearch&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><ul>
+<li>create document. 指定 ID 如果已经存在，就报错</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">PUT users/_create/1
+<span style="color:#f92672">{</span>
+     <span style="color:#e6db74">&#34;user&#34;</span> : <span style="color:#e6db74">&#34;Jack&#34;</span>,
+    <span style="color:#e6db74">&#34;post_date&#34;</span> : <span style="color:#e6db74">&#34;2019-05-15T14:12:12&#34;</span>,
+    <span style="color:#e6db74">&#34;message&#34;</span> : <span style="color:#e6db74">&#34;trying out Elasticsearch&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><ul>
+<li>Update 指定 ID (先删除，在写入)</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">PUT users/_doc/1
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;user&#34;</span> : <span style="color:#e6db74">&#34;Mike&#34;</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><ul>
+<li>在原文档上增加字段</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">POST users/_update/1/
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;doc&#34;</span>:<span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;post_date&#34;</span> : <span style="color:#e6db74">&#34;2019-05-15T14:12:12&#34;</span>,
+        <span style="color:#e6db74">&#34;message&#34;</span> : <span style="color:#e6db74">&#34;trying out Elasticsearch&#34;</span>
+    <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><p>PUT 必须指定id；POST 则非必须指定id。</p>
+<blockquote>
+<p>HTTP协议规定，POST方法修改资源状态时，URL指示的是该资源的父级资源，待修改资源的ID信息在请求体中携带。而PUT方法修改资源状态时，URL直接指示待修改资源。因此，同样是创建资源，重复提交POST请求可能产生两个不同的资源，而重复提交PUT请求只会对其URL中指定的资源起作用，也就是只会创建一个资源。</p>
+</blockquote>
+<ul>
+<li>删除文档</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">DELETE users/_doc/1
+</code></pre></div><h4 id="bulk-api">
+  Bulk API
+  <a class="anchor" href="#bulk-api">#</a>
+</h4>
+<ul>
+<li>Bulk 操作</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{ <span style="color:#f92672">&#34;index&#34;</span> : { <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test&#34;</span>, <span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;1&#34;</span> } }
+{ <span style="color:#f92672">&#34;field1&#34;</span> : <span style="color:#e6db74">&#34;value1&#34;</span> }
+{ <span style="color:#f92672">&#34;delete&#34;</span> : { <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test&#34;</span>, <span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;2&#34;</span> } }
+{ <span style="color:#f92672">&#34;create&#34;</span> : { <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test2&#34;</span>, <span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;3&#34;</span> } }
+{ <span style="color:#f92672">&#34;field1&#34;</span> : <span style="color:#e6db74">&#34;value3&#34;</span> }
+{ <span style="color:#f92672">&#34;update&#34;</span> : {<span style="color:#f92672">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;1&#34;</span>, <span style="color:#f92672">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test&#34;</span>} }
+{ <span style="color:#f92672">&#34;doc&#34;</span> : {<span style="color:#f92672">&#34;field2&#34;</span> : <span style="color:#e6db74">&#34;value2&#34;</span>} }
+</code></pre></div><ul>
+<li>mget 操作</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">GET /_mget
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;docs&#34;</span> : <span style="color:#f92672">[</span>
+        <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;1&#34;</span>
+        <span style="color:#f92672">}</span>,
+        <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;2&#34;</span>
+        <span style="color:#f92672">}</span>
+    <span style="color:#f92672">]</span>
+<span style="color:#f92672">}</span>
+
+GET /_mget
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;docs&#34;</span> : <span style="color:#f92672">[</span>
+        <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;1&#34;</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span> : false
+        <span style="color:#f92672">}</span>,
+        <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;2&#34;</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span> : <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;field3&#34;</span>, <span style="color:#e6db74">&#34;field4&#34;</span><span style="color:#f92672">]</span>
+        <span style="color:#f92672">}</span>,
+        <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;_index&#34;</span> : <span style="color:#e6db74">&#34;test&#34;</span>,
+            <span style="color:#e6db74">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;3&#34;</span>,
+            <span style="color:#e6db74">&#34;_source&#34;</span> : <span style="color:#f92672">{</span>
+                <span style="color:#e6db74">&#34;include&#34;</span>: <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;user&#34;</span><span style="color:#f92672">]</span>,
+                <span style="color:#e6db74">&#34;exclude&#34;</span>: <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;user.location&#34;</span><span style="color:#f92672">]</span>
+            <span style="color:#f92672">}</span>
+        <span style="color:#f92672">}</span>
+    <span style="color:#f92672">]</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><ul>
+<li>URI中指定index</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">GET /test2/_mget
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;docs&#34;</span> : <span style="color:#f92672">[</span>
+        <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;1&#34;</span>
+        <span style="color:#f92672">}</span>,
+        <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;_id&#34;</span> : <span style="color:#e6db74">&#34;3&#34;</span>
+        <span style="color:#f92672">}</span>
+    <span style="color:#f92672">]</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><ul>
+<li>msearch 操作</li>
+</ul>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-bash" data-lang="bash">POST kibana_sample_data_ecommerce/_msearch
+<span style="color:#f92672">{}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;query&#34;</span> : <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;match_all&#34;</span> : <span style="color:#f92672">{}}</span>,<span style="color:#e6db74">&#34;size&#34;</span>:1<span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;index&#34;</span> : <span style="color:#e6db74">&#34;kibana_sample_data_flights&#34;</span><span style="color:#f92672">}</span>
+<span style="color:#f92672">{</span><span style="color:#e6db74">&#34;query&#34;</span> : <span style="color:#f92672">{</span><span style="color:#e6db74">&#34;match_all&#34;</span> : <span style="color:#f92672">{}}</span>,<span style="color:#e6db74">&#34;size&#34;</span>:2<span style="color:#f92672">}</span>
+</code></pre></div><h4 id="常见错误返回">
+  常见错误返回
+  <a class="anchor" href="#%e5%b8%b8%e8%a7%81%e9%94%99%e8%af%af%e8%bf%94%e5%9b%9e">#</a>
+</h4>
+<table>
+<thead>
+<tr>
+<th>问题</th>
+<th>原因</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>无法连接</td>
+<td>网络故障或集群挂了</td>
+</tr>
+<tr>
+<td>连接无法关闭</td>
+<td>网络故障或节点出错</td>
+</tr>
+<tr>
+<td>429</td>
+<td>集群过于繁忙</td>
+</tr>
+<tr>
+<td>4xx</td>
+<td>请求体格式有错</td>
+</tr>
+<tr>
+<td>500</td>
+<td>集群内部错误</td>
+</tr>
+</tbody>
+</table>
+<h2 id="search-api">
+  Search API
+  <a class="anchor" href="#search-api">#</a>
+</h2>
+<h4 id="uri-search">
+  URI Search
+  <a class="anchor" href="#uri-search">#</a>
+</h4>
+<blockquote>
+<p>在URL中使用查询参数。</p>
+</blockquote>
+<ul>
+<li>
+<p>参数</p>
+<ul>
+<li>q：指定查询语句，使用Query String Syntax；</li>
+<li>df：默认字段，不指定时，会对所有字段进行查询；</li>
+<li>Sort排序 / from 和 Size 用于分页；</li>
+<li>Profile 可以查看查询时如何执行。</li>
+</ul>
+</li>
+<li>
+<p>Query String Syntax</p>
+<ul>
+<li>
+<p>指定字段</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查询title字段包含2021的数据，使用的是 TermQuery（title字段是text类型）</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>2012&amp;df<span style="color:#f92672">=</span>title
+<span style="color:#75715e"># 另一种写法</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:2021
+<span style="color:#75715e"># 带上sort等参数</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>2012&amp;df<span style="color:#f92672">=</span>title&amp;sort<span style="color:#f92672">=</span>year:desc&amp;from<span style="color:#f92672">=</span>0&amp;size<span style="color:#f92672">=</span>10&amp;timeout<span style="color:#f92672">=</span>1s
+</code></pre></div></li>
+<li>
+<p>泛查询</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查询所有字段包含或等于2021的数据，使用的是 DisjunctionMaxQuery </span>
+GET /movies/_search?q<span style="color:#f92672">=</span><span style="color:#ae81ff">2012</span>
+</code></pre></div></li>
+<li>
+<p>Term vs Phrase</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查询title字段中包含Beautiful 和 Mind的数据，使用的是 PhraseQuery，Phrase查询，还要求前后顺序保持一致</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:<span style="color:#e6db74">&#34;Beautiful Mind&#34;</span>
+<span style="color:#75715e"># 查询title字段包含Beautiful 或其他字段包含 Mind的数据，使用TermQuery（对title字段）和DisjunctionMaxQuery （对所有字段）</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:Beautiful Mind
+</code></pre></div></li>
+<li>
+<p>分组与引号</p>
+<blockquote>
+<p>TermQuery 使用括号括起来；PhraseQuery 使用引号括起来。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查询title字段包含Beautiful 或Mind 的数据，使用的是 TermQuery </span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:<span style="color:#f92672">(</span>Beautiful Mind<span style="color:#f92672">)</span>
+</code></pre></div></li>
+<li>
+<p>布尔操作</p>
+<blockquote>
+<p>两个TermQuery在一起，默认是or的关系，其他关系操作符：
+AND / OR / NOT</p>
+</blockquote>
+</li>
+<li>
+<p>分组</p>
+<blockquote>
+<p>+表示 msut  -表示 must_not</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查询title中包含了Beautiful 和Mind 的数据，使用的是BooleanQuery</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:<span style="color:#f92672">(</span>Beautiful AND Mind<span style="color:#f92672">)</span>
+<span style="color:#75715e"># 查询title中包含了Beautiful 但不包含Mind 的数据，使用的是BooleanQuery</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:<span style="color:#f92672">(</span>Beautiful NOT Mind<span style="color:#f92672">)</span>
+<span style="color:#75715e"># 等价于上一句</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:<span style="color:#f92672">(</span>+Beautiful -Mind<span style="color:#f92672">)</span>
+<span style="color:#75715e"># 查询title包含了Mind和可能包含Beautiful 的数据，使用的是BooleanQuery</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:<span style="color:#f92672">(</span>Beautiful %2BMind<span style="color:#f92672">)</span>
+</code></pre></div></li>
+<li>
+<p>范围查询</p>
+<blockquote>
+<p>区间表示：[]闭区间，{}开区间</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查询year字段大于1980的数据，使用的是IndexOrDocValuesQuery</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>year:&gt;<span style="color:#f92672">=</span><span style="color:#ae81ff">1980</span>
+<span style="color:#75715e"># 查询 year字段大于2010小于2018的数据，使用的是IndexOrDocValuesQuery</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>year:<span style="color:#f92672">[</span><span style="color:#ae81ff">2010</span> TO 2018<span style="color:#f92672">]</span>
+</code></pre></div></li>
+<li>
+<p>通配符查询（通配符查询效率低，占用内存大，不建议使用）</p>
+<blockquote>
+<p>? 代表1个字符，* 代表0个或多个字符</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查询title字段中有b开头的term的数据，使用的是MultiTermQueryConstantScoreWrapper</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:b*
+</code></pre></div></li>
+<li>
+<p>模糊匹配 &amp; 近似匹配</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查询title字段中类似beautifl（有一个字符的误差）的数据，使用的是BoostQuery</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:beautifl~1
+<span style="color:#75715e"># 查询title字段中有类似Lord Rings的短语，中间可以有小于2个间隔，使用的是PhraseQuery</span>
+GET /movies/_search?q<span style="color:#f92672">=</span>title:<span style="color:#e6db74">&#34;Lord Rings&#34;</span>~2
+</code></pre></div></li>
+</ul>
+</li>
+</ul>
+<h4 id="request-body-search">
+  Request Body Search
+  <a class="anchor" href="#request-body-search">#</a>
+</h4>
+<blockquote>
+<p>使用Elasticsearch提供的，基于JSON格式的更加完备的Query Domain Specific Language（DSL）。</p>
+</blockquote>
+<ul>
+<li>
+<p>分页：from，size</p>
+</li>
+<li>
+<p>排序：sort：[{&ldquo;字段名&rdquo; : &ldquo;desc&rdquo;}]</p>
+</li>
+<li>
+<p>_source filtering</p>
+<blockquote>
+<p>如果_source没有存储，那就只返回匹配的文档的元数据；_source支持使用通配符：_source[&ldquo;name*&quot;]。</p>
+</blockquote>
+</li>
+<li>
+<p>脚本字段：</p>
+<blockquote>
+<p>使用painless脚本，计算出一个结果作为字段。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># order_date字段和hello拼接作为一个新字段</span>
+GET kibana_sample_data_ecommerce/_search
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;script_fields&#34;</span>: <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;new_field&#34;</span>: <span style="color:#f92672">{</span>
+      <span style="color:#e6db74">&#34;script&#34;</span>: <span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;lang&#34;</span>: <span style="color:#e6db74">&#34;painless&#34;</span>,
+        <span style="color:#e6db74">&#34;source&#34;</span>: <span style="color:#e6db74">&#34;doc[&#39;order_date&#39;].value+&#39;hello&#39;&#34;</span>
+      <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>,
+  <span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;match_all&#34;</span>: <span style="color:#f92672">{}</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+<li>
+<p>使用Match</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># operator为and表示两个term是and的关系，默认为or的关系</span>
+POST movies/_search
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;match&#34;</span>: <span style="color:#f92672">{</span>
+      <span style="color:#e6db74">&#34;title&#34;</span>: <span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;last christmas&#34;</span>,
+        <span style="color:#e6db74">&#34;operator&#34;</span>: <span style="color:#e6db74">&#34;and&#34;</span>
+      <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+<li>
+<p>短语搜索 - Match Phrase</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># slop表示短语之间可以有多少个位置</span>
+POST movies/_search
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;match_phrase&#34;</span>: <span style="color:#f92672">{</span>
+      <span style="color:#e6db74">&#34;title&#34;</span>:<span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;query&#34;</span>: <span style="color:#e6db74">&#34;one love&#34;</span>,
+        <span style="color:#e6db74">&#34;slop&#34;</span>: <span style="color:#ae81ff">1</span>
+
+      <span style="color:#f92672">}</span>
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+<li>
+<p>Query String</p>
+<blockquote>
+<p>类似于URI查询</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 检索内容中可以有操作符，例如AND 、OR</span>
+POST 索引名/_search
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;query&#34;</span> : <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;query_string&#34;</span> : <span style="color:#f92672">{</span>
+      <span style="color:#e6db74">&#34;default field&#34;</span> : <span style="color:#e6db74">&#34;字段名&#34;</span>,
+      <span style="color:#e6db74">&#34;query&#34;</span> : <span style="color:#e6db74">&#34;检索内容&#34;</span>
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+<li>
+<p>Simple Query String</p>
+<blockquote>
+<ul>
+<li>类似于Query String，但会忽略错误的语法，同时只支持部分查询语法；</li>
+<li>不支持 AND OR NOT，会当做字符串处理；</li>
+<li>Term 之间默认关系是OR，可以指定Operator。</li>
+</ul>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">POST 索引名/_search
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;query&#34;</span> : <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;simple_query_string&#34;</span> : <span style="color:#f92672">{</span>
+      <span style="color:#e6db74">&#34;fields&#34;</span> : <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;字段名&#34;</span><span style="color:#f92672">]</span>,
+      <span style="color:#e6db74">&#34;query&#34;</span> : <span style="color:#e6db74">&#34;检索内容&#34;</span>,
+      <span style="color:#e6db74">&#34;default_operator&#34;</span> : <span style="color:#e6db74">&#34;AND&#34;</span>
+    <span style="color:#f92672">}</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+</ul>
+<h2 id="mapping">
+  Mapping
+  <a class="anchor" href="#mapping">#</a>
+</h2>
+<blockquote>
+<p>Mapping类似数据库中的schema的定义，作用如下：</p>
+<p>定义索引中的字段的名称；</p>
+<p>定义字段的数据类型，例如字符串、数字、布尔；</p>
+<p>字段，倒排索引的相关配置（Analyzed or Not Analyzed）。</p>
+<p>Mapping会把JSON文档映射成Lucene所需要的的扁平格式；</p>
+<p>一个Mapping属于一个索引的Type：每个文档都属于一个Type；一个Type有一个Mapping定义；7.0开始，不需要再Mapping定义中指定type信息。</p>
+</blockquote>
+<h4 id="字段的数据类型">
+  字段的数据类型
+  <a class="anchor" href="#%e5%ad%97%e6%ae%b5%e7%9a%84%e6%95%b0%e6%8d%ae%e7%b1%bb%e5%9e%8b">#</a>
+</h4>
+<ul>
+<li>
+<p>简单类型</p>
+<blockquote>
+<ul>
+<li>Text/Keyword</li>
+<li>Date</li>
+<li>Integer/Floating</li>
+<li>Boolean</li>
+<li>IPv4 &amp; IPv6</li>
+</ul>
+</blockquote>
+</li>
+<li>
+<p>复杂类型</p>
+<ul>
+<li>对象类型/嵌套类型</li>
+</ul>
+</li>
+<li>
+<p>特殊类型</p>
+<ul>
+<li>geo_point &amp; geo_shape / percolator</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>假设要实现多字段类型，厂商名字实现精确匹配：</p>
+<ul>
+<li>增加一个keyword字段</li>
+<li>使用不同的analyzer：
+<ul>
+<li>不同语言</li>
+<li>拼音字段的搜索</li>
+<li>还支持为搜索和索引指定不同的analyzer</li>
+</ul>
+</li>
+</ul>
+</blockquote>
+<h4 id="dynamic-mapping">
+  Dynamic Mapping
+  <a class="anchor" href="#dynamic-mapping">#</a>
+</h4>
+<blockquote>
+<p>写入文档时，如果索引不存在，会自动创建索引；Dynamic Mapping 的机制，使得我们无需手动定义Mappings。Elasticsearch会自动根据文档信息，推算出字段的类型；有时候会推算的不对，例如地理位置信息；类型设置不对时，会导致一些功能无法正常运行，例如Range查询。</p>
+</blockquote>
+<ul>
+<li>
+<p>类型字段识别</p>
+<table>
+<thead>
+<tr>
+<th>JSON类型</th>
+<th>Elasticsearch类型</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>字符串</td>
+<td>匹配日期格式，设置成Date</td>
+</tr>
+<tr>
+<td>字符串</td>
+<td>配置数字设置为float或者long，该选项默认关闭</td>
+</tr>
+<tr>
+<td>字符串</td>
+<td>设置为Text，并增加keyword子字段</td>
+</tr>
+<tr>
+<td>布尔值</td>
+<td>boolean</td>
+</tr>
+<tr>
+<td>浮点数</td>
+<td>float</td>
+</tr>
+<tr>
+<td>整数</td>
+<td>long</td>
+</tr>
+<tr>
+<td>对象</td>
+<td>Object</td>
+</tr>
+<tr>
+<td>数组</td>
+<td>由第一个非空数值的类型决定</td>
+</tr>
+<tr>
+<td>空值</td>
+<td>忽略</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>修改Mapping的字段类型</p>
+<ul>
+<li>
+<p>新增加字段</p>
+<table>
+<thead>
+<tr>
+<th>Dynamic</th>
+<th>新增字段时候的表现</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>true</td>
+<td>一旦有新增字段的文档写入，Mapping也同时被更新</td>
+</tr>
+<tr>
+<td>false</td>
+<td>Mapping不会被更新，新增字段的数据无法被索引，但信息会出现在_source中</td>
+</tr>
+<tr>
+<td>strict</td>
+<td>文档写入失败</td>
+</tr>
+</tbody>
+</table>
+</li>
+<li>
+<p>对已有字段</p>
+<blockquote>
+<p>一旦已有数据写入，就不再支持修改字段定义。Lucene实现的倒排索引，一旦生产后，就不允许修改。</p>
+</blockquote>
+</li>
+<li>
+<p>如果希望改变字段类型，必须Reindex API，重建索引。</p>
+<blockquote>
+<p>如果修改了字段的数据类型，会导致已被索引的属于无法被搜索；如果是增加新的字段，就不会有这样的影响。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="显示mapping">
+  显示Mapping
+  <a class="anchor" href="#%e6%98%be%e7%a4%bamapping">#</a>
+</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">PUT 索引名
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;mappings&#34;</span> : <span style="color:#f92672">{}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div><blockquote>
+<p>手写，减少工作量，减少出错概率：</p>
+<p>创建一个临时的index，写入一些样本数据；</p>
+<p>通过访问Mapping API 获得该临时文件的动态Mapping定义；</p>
+<p>修改后用，使用该配置创建索引；</p>
+<p>删除临时索引。</p>
+</blockquote>
+<h4 id="常见参数">
+  常见参数
+  <a class="anchor" href="#%e5%b8%b8%e8%a7%81%e5%8f%82%e6%95%b0">#</a>
+</h4>
+<ul>
+<li>
+<p>index-控制当前字段是否被索引。默认为true</p>
+</li>
+<li>
+<p>Index Options</p>
+<blockquote>
+<ul>
+<li>docs-记录doc id；</li>
+<li>freqs-记录doc id 和 term frequencies；</li>
+<li>positions-记录doc id / term frequencies / term position；</li>
+<li>offsets-记录doc id / term frequencies / term position / character offects。</li>
+</ul>
+</blockquote>
+<blockquote>
+<p>Text 类型默认记录positions，其他默认 docs。</p>
+</blockquote>
+</li>
+<li>
+<p>null_value；</p>
+<ul>
+<li>需要对Null值实现搜索；</li>
+<li>只有Keyword类型支持设定null_value。</li>
+</ul>
+</li>
+<li>
+<p>copy_to；</p>
+<blockquote>
+<p>_all 在 7中被copy_to所替代；满足一些特定的搜索需求；copy_to将字段的数值拷贝到目标字段，实现类似_all的作用；copy_to的目标字段不出现在_source中。</p>
+</blockquote>
+</li>
+<li>
+<p>数组类型；</p>
+<blockquote>
+<p>任何字段，都可以包含多个相同类型的数值。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="index-template">
+  Index Template
+  <a class="anchor" href="#index-template">#</a>
+</h4>
+<blockquote>
+<p>设定Mappings和Settings，并按照一定的规则，自动匹配到新创建的索引之上。也就是新创建索引时，不需要显示设置Mappings和Setting。</p>
+<ul>
+<li>模板仅在一个索引被创建时，才会产生作用。修改模板不会影响已创建的索引；</li>
+<li>可以设定多个索引模板，这些设置会被“merge”在一起；</li>
+<li>可以指定“order”的数值，控制“merging”的过程。</li>
+</ul>
+</blockquote>
+<ul>
+<li>
+<p>工作方式</p>
+<blockquote>
+<p>当一个索引被创建时：</p>
+<ol>
+<li>应用Elasticsearch默认的settings 和 mappings；</li>
+<li>应用order数值低的Index Template中的设定；</li>
+<li>应用order高的Index Template中的设定，之前的设定会被覆盖；</li>
+<li>应用创建索引时，用户所指定的Settings和Mappings，并覆盖之前模板中的设定。</li>
+<li>优先级：用户指定 &gt; order高 &gt; order低 &gt; ES默认</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>demo</p>
+<ul>
+<li>
+<p>创建Index Template</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 匹配所有索引，设置主分片为1，副本分片为1</span>
+PUT _template/template_default
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;index_patterns&#34;</span>: <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;*&#34;</span><span style="color:#f92672">]</span>,
+  <span style="color:#e6db74">&#34;order&#34;</span> : 0,
+  <span style="color:#e6db74">&#34;version&#34;</span>: 1,
+  <span style="color:#e6db74">&#34;settings&#34;</span>: <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;number_of_shards&#34;</span>: 1,
+    <span style="color:#e6db74">&#34;number_of_replicas&#34;</span>:1
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+<span style="color:#75715e"># 匹配名字为test开头的索引，</span>
+PUT /_template/template_test，设置主分片为1，副本分片为1，关闭日期推测，打开数字推测
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;index_patterns&#34;</span> : <span style="color:#f92672">[</span><span style="color:#e6db74">&#34;test*&#34;</span><span style="color:#f92672">]</span>,
+    <span style="color:#e6db74">&#34;order&#34;</span> : 1,
+    <span style="color:#e6db74">&#34;settings&#34;</span> : <span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;number_of_shards&#34;</span>: 1,
+        <span style="color:#e6db74">&#34;number_of_replicas&#34;</span> : <span style="color:#ae81ff">2</span>
+    <span style="color:#f92672">}</span>,
+    <span style="color:#e6db74">&#34;mappings&#34;</span> : <span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;date_detection&#34;</span>: false,
+        <span style="color:#e6db74">&#34;numeric_detection&#34;</span>: true
+    <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+<li>
+<p>查看template</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 查看名为template_default的模板</span>
+GET /_template/template_default
+<span style="color:#75715e"># 查看名字以temp开头的模板</span>
+GET /_template/temp*
+</code></pre></div></li>
+<li>
+<p>创建索引</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">PUT testmy
+<span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;settings&#34;</span>:<span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;number_of_replicas&#34;</span>:5
+    <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+<span style="color:#75715e"># 查看索引</span>
+GET testmy/_mapping
+GET testmy/_settings
+</code></pre></div></li>
+</ul>
+</li>
+</ul>
+<h4 id="dynamic-template">
+  Dynamic Template
+  <a class="anchor" href="#dynamic-template">#</a>
+</h4>
+<blockquote>
+<p>应用在某个索引上面，根据Elasticsearch识别的数据类型，结合字段名称，来动态设定字段类型。</p>
+<p>例如：</p>
+<ol>
+<li>所有字符串类型都设定成keyword，或者关闭keyword字段；</li>
+<li>is开头的字段都设置成boolean；</li>
+<li>long开头的字段都设置成long类型。</li>
+</ol>
+</blockquote>
+<ul>
+<li>
+<p>demo</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell"><span style="color:#75715e"># 类型为string设置字段为keyword类型，类型为string且名字以字段名is开头，设置字段为boolean类型</span>
+PUT my_index
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;mappings&#34;</span>: <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;dynamic_templates&#34;</span>: <span style="color:#f92672">[</span>
+            <span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;strings_as_boolean&#34;</span>: <span style="color:#f92672">{</span>
+          <span style="color:#e6db74">&#34;match_mapping_type&#34;</span>:   <span style="color:#e6db74">&#34;string&#34;</span>,
+          <span style="color:#e6db74">&#34;match&#34;</span>:<span style="color:#e6db74">&#34;is*&#34;</span>,
+          <span style="color:#e6db74">&#34;mapping&#34;</span>: <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;boolean&#34;</span>
+          <span style="color:#f92672">}</span>
+        <span style="color:#f92672">}</span>
+      <span style="color:#f92672">}</span>,
+      <span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;strings_as_keywords&#34;</span>: <span style="color:#f92672">{</span>
+          <span style="color:#e6db74">&#34;match_mapping_type&#34;</span>:   <span style="color:#e6db74">&#34;string&#34;</span>,
+          <span style="color:#e6db74">&#34;mapping&#34;</span>: <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;keyword&#34;</span>
+          <span style="color:#f92672">}</span>
+        <span style="color:#f92672">}</span>
+      <span style="color:#f92672">}</span>
+    <span style="color:#f92672">]</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+<span style="color:#75715e"># 匹配字段名为name.*的字段，不匹配字段名为*.middle的字段</span>
+PUT my_index
+<span style="color:#f92672">{</span>
+  <span style="color:#e6db74">&#34;mappings&#34;</span>: <span style="color:#f92672">{</span>
+    <span style="color:#e6db74">&#34;dynamic_templates&#34;</span>: <span style="color:#f92672">[</span>
+      <span style="color:#f92672">{</span>
+        <span style="color:#e6db74">&#34;full_name&#34;</span>: <span style="color:#f92672">{</span>
+          <span style="color:#e6db74">&#34;path_match&#34;</span>:   <span style="color:#e6db74">&#34;name.*&#34;</span>,
+          <span style="color:#e6db74">&#34;path_unmatch&#34;</span>: <span style="color:#e6db74">&#34;*.middle&#34;</span>,
+          <span style="color:#e6db74">&#34;mapping&#34;</span>: <span style="color:#f92672">{</span>
+            <span style="color:#e6db74">&#34;type&#34;</span>:       <span style="color:#e6db74">&#34;text&#34;</span>,
+            <span style="color:#e6db74">&#34;copy_to&#34;</span>:    <span style="color:#e6db74">&#34;full_name&#34;</span>
+          <span style="color:#f92672">}</span>
+        <span style="color:#f92672">}</span>
+      <span style="color:#f92672">}</span>
+    <span style="color:#f92672">]</span>
+  <span style="color:#f92672">}</span>
+<span style="color:#f92672">}</span>
+</code></pre></div></li>
+</ul>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#基本概念">基本概念</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#基本操作">基本操作</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#search-api">Search API</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#mapping">Mapping</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

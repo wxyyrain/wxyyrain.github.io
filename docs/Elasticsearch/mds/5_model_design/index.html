@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="反范式化设计 #  关系型数据库范式化设计 #   1NF - 消除 非主属性 对键的 部分函数依赖； 2NF - 消除 非主要属性 对键的 传递函数依赖； 3NF - 消除 主属性 对键的 传递函数依赖； BCNF - 主属性 不依赖于 主属性。   范式化设计（Normalization）的主要目标是“减少”不必要的更新；副作用：一个完全范式化设计的数据库会经常面临“查询缓慢”的问题，因为数据库越范式化，就需要Join 越多表。
+范式化节省了存储空间，但是存储空间却越来越便宜；范式化简化了更新，但是数据“读”操作可能更频繁。
+ Denormailzation #   反范式化设计，数据“Flattening”，不使用关联关系，而是在文档中保存冗余的数据拷贝。
+   优点：无需处理 Joins 操作，数据读取性能好；
+ Elasticsearch 通过压缩_source字段，减少磁盘空间开销。
+   缺点：不适合在数据频繁修改的场景。例如，一条数据（用户名）的改动，可能会引起很多数据的更新。
+  处理关联关系 #   关系型数据库，一般会考虑Normalize数据；在Elasticsearch，往往考虑Denormalize 数据；Denormalize 的好处：读的速度变快/无需表连接/ 无需行锁等。
+  对象类型 嵌套对象（Nested Object） 父子关联关系（Parent/Child） 应用端关联  对象类型数组查询问题 #  存储时，内部对象的边界没有考虑在内，JSON 格式被处理成扁平式键值对的结构，对多个字段查询时，可能会导致意外结果。">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="数据建模" />
+<meta property="og:description" content="反范式化设计 #  关系型数据库范式化设计 #   1NF - 消除 非主属性 对键的 部分函数依赖； 2NF - 消除 非主要属性 对键的 传递函数依赖； 3NF - 消除 主属性 对键的 传递函数依赖； BCNF - 主属性 不依赖于 主属性。   范式化设计（Normalization）的主要目标是“减少”不必要的更新；副作用：一个完全范式化设计的数据库会经常面临“查询缓慢”的问题，因为数据库越范式化，就需要Join 越多表。
+范式化节省了存储空间，但是存储空间却越来越便宜；范式化简化了更新，但是数据“读”操作可能更频繁。
+ Denormailzation #   反范式化设计，数据“Flattening”，不使用关联关系，而是在文档中保存冗余的数据拷贝。
+   优点：无需处理 Joins 操作，数据读取性能好；
+ Elasticsearch 通过压缩_source字段，减少磁盘空间开销。
+   缺点：不适合在数据频繁修改的场景。例如，一条数据（用户名）的改动，可能会引起很多数据的更新。
+  处理关联关系 #   关系型数据库，一般会考虑Normalize数据；在Elasticsearch，往往考虑Denormalize 数据；Denormalize 的好处：读的速度变快/无需表连接/ 无需行锁等。
+  对象类型 嵌套对象（Nested Object） 父子关联关系（Parent/Child） 应用端关联  对象类型数组查询问题 #  存储时，内部对象的边界没有考虑在内，JSON 格式被处理成扁平式键值对的结构，对多个字段查询时，可能会导致意外结果。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2021-12-30T22:14:08+08:00" />
+<meta property="article:modified_time" content="2021-12-30T22:14:08+08:00" />
+
+<title>数据建模 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.66f77fe6d3d527a8b25a956c6f38abbc8b2fc882f63bc32f784bafc5f05a15b0.js" integrity="sha256-Zvd/5tPVJ6iyWpVsbzirvIsvyIL2O8MveEuvxfBaFbA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class=" active">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>MySQL</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/0_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Distribute</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>数据建模</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#反范式化设计">反范式化设计</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#处理关联关系">处理关联关系</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#重建索引">重建索引</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#ingest-pipeline">Ingest Pipeline</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#painless">Painless</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#数据建模">数据建模</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#最佳实践">最佳实践</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="反范式化设计">
+  反范式化设计
+  <a class="anchor" href="#%e5%8f%8d%e8%8c%83%e5%bc%8f%e5%8c%96%e8%ae%be%e8%ae%a1">#</a>
+</h2>
+<h4 id="关系型数据库范式化设计">
+  关系型数据库范式化设计
+  <a class="anchor" href="#%e5%85%b3%e7%b3%bb%e5%9e%8b%e6%95%b0%e6%8d%ae%e5%ba%93%e8%8c%83%e5%bc%8f%e5%8c%96%e8%ae%be%e8%ae%a1">#</a>
+</h4>
+<ul>
+<li>1NF - 消除 非主属性 对键的 部分函数依赖；</li>
+<li>2NF - 消除 非主要属性 对键的 传递函数依赖；</li>
+<li>3NF - 消除 主属性 对键的 传递函数依赖；</li>
+<li>BCNF - 主属性 不依赖于 主属性。</li>
+</ul>
+<blockquote>
+<p>范式化设计（Normalization）的主要目标是“减少”不必要的更新；副作用：一个完全范式化设计的数据库会经常面临“查询缓慢”的问题，因为数据库越范式化，就需要Join 越多表。</p>
+<p>范式化节省了存储空间，但是存储空间却越来越便宜；范式化简化了更新，但是数据“读”操作可能更频繁。</p>
+</blockquote>
+<h4 id="denormailzation">
+  Denormailzation
+  <a class="anchor" href="#denormailzation">#</a>
+</h4>
+<blockquote>
+<p>反范式化设计，数据“Flattening”，不使用关联关系，而是在文档中保存冗余的数据拷贝。</p>
+</blockquote>
+<ul>
+<li>
+<p>优点：无需处理 Joins 操作，数据读取性能好；</p>
+<blockquote>
+<p>Elasticsearch 通过压缩_source字段，减少磁盘空间开销。</p>
+</blockquote>
+</li>
+<li>
+<p>缺点：不适合在数据频繁修改的场景。例如，一条数据（用户名）的改动，可能会引起很多数据的更新。</p>
+</li>
+</ul>
+<h2 id="处理关联关系">
+  处理关联关系
+  <a class="anchor" href="#%e5%a4%84%e7%90%86%e5%85%b3%e8%81%94%e5%85%b3%e7%b3%bb">#</a>
+</h2>
+<blockquote>
+<p>关系型数据库，一般会考虑Normalize数据；在Elasticsearch，往往考虑Denormalize 数据；Denormalize 的好处：读的速度变快/无需表连接/ 无需行锁等。</p>
+</blockquote>
+<ol>
+<li>对象类型</li>
+<li>嵌套对象（Nested Object）</li>
+<li>父子关联关系（Parent/Child）</li>
+<li>应用端关联</li>
+</ol>
+<h4 id="对象类型数组查询问题">
+  对象类型数组查询问题
+  <a class="anchor" href="#%e5%af%b9%e8%b1%a1%e7%b1%bb%e5%9e%8b%e6%95%b0%e7%bb%84%e6%9f%a5%e8%af%a2%e9%97%ae%e9%a2%98">#</a>
+</h4>
+<p>存储时，内部对象的边界没有考虑在内，JSON 格式被处理成扁平式键值对的结构，对多个字段查询时，可能会导致意外结果。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json">{
+  <span style="color:#f92672">&#34;title&#34;</span>:<span style="color:#e6db74">&#34;Speed&#34;</span>,
+  <span style="color:#f92672">&#34;actors&#34;</span>:[
+    {
+      <span style="color:#f92672">&#34;first_name&#34;</span>:<span style="color:#e6db74">&#34;Keanu&#34;</span>,
+      <span style="color:#f92672">&#34;last_name&#34;</span>:<span style="color:#e6db74">&#34;Reeves&#34;</span>
+    },
+
+    {
+      <span style="color:#f92672">&#34;first_name&#34;</span>:<span style="color:#e6db74">&#34;Dennis&#34;</span>,
+      <span style="color:#f92672">&#34;last_name&#34;</span>:<span style="color:#e6db74">&#34;Hopper&#34;</span>
+    }
+
+  ]
+}
+<span style="color:#75715e">// 可以查询到上面的结果
+</span><span style="color:#75715e"></span>{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;bool&#34;</span>: {
+      <span style="color:#f92672">&#34;must&#34;</span>: [
+        {<span style="color:#f92672">&#34;match&#34;</span>: {<span style="color:#f92672">&#34;actors.first_name&#34;</span>: <span style="color:#e6db74">&#34;Keanu&#34;</span>}},
+        {<span style="color:#f92672">&#34;match&#34;</span>: {<span style="color:#f92672">&#34;actors.last_name&#34;</span>: <span style="color:#e6db74">&#34;Hopper&#34;</span>}}
+      ]
+    }
+  }
+}
+<span style="color:#75715e">// 内部实际存储
+</span><span style="color:#75715e"></span>{
+	<span style="color:#f92672">&#34;actors.first_name&#34;</span> : [<span style="color:#e6db74">&#34;Keanu&#34;</span>, <span style="color:#e6db74">&#34;Dennis&#34;</span>],
+  <span style="color:#f92672">&#34;actors.last_name&#34;</span> : [<span style="color:#e6db74">&#34;Reeves&#34;</span>, <span style="color:#e6db74">&#34;Hopper&#34;</span>]
+}
+</code></pre></div><h4 id="nested">
+  Nested
+  <a class="anchor" href="#nested">#</a>
+</h4>
+<blockquote>
+<p>Nested数据类型：允许对象数组中的对象被独立索引；使用nested 和 properties 关键字，将所有actors 索引到多个分隔的文档；在内部，Nested 文档会被保存在两个 Lucene 文档中，在查询时做 join处理。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// mapping定义
+</span><span style="color:#75715e"></span><span style="color:#e6db74">&#34;properties&#34;</span> <span style="color:#960050;background-color:#1e0010">:</span> {
+        <span style="color:#f92672">&#34;actors&#34;</span> : {
+          <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;nested&#34;</span>,
+          <span style="color:#f92672">&#34;properties&#34;</span> : {
+            <span style="color:#f92672">&#34;first_name&#34;</span> : {<span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;keyword&#34;</span>},
+            <span style="color:#f92672">&#34;last_name&#34;</span> : {<span style="color:#f92672">&#34;type&#34;</span> : <span style="color:#e6db74">&#34;keyword&#34;</span>}
+          }}
+      }
+<span style="color:#75715e">// 嵌套查询
+</span><span style="color:#75715e"></span>{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;bool&#34;</span>: {
+      <span style="color:#f92672">&#34;must&#34;</span>: [
+        {<span style="color:#f92672">&#34;match&#34;</span>: {<span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;Speed&#34;</span>}},
+        {
+          <span style="color:#f92672">&#34;nested&#34;</span>: {
+            <span style="color:#f92672">&#34;path&#34;</span>: <span style="color:#e6db74">&#34;actors&#34;</span>,
+            <span style="color:#f92672">&#34;query&#34;</span>: {
+              <span style="color:#f92672">&#34;bool&#34;</span>: {
+                <span style="color:#f92672">&#34;must&#34;</span>: [
+                  {<span style="color:#f92672">&#34;match&#34;</span>: {
+                    <span style="color:#f92672">&#34;actors.first_name&#34;</span>: <span style="color:#e6db74">&#34;Keanu&#34;</span>
+                  }},
+
+                  {<span style="color:#f92672">&#34;match&#34;</span>: {
+                    <span style="color:#f92672">&#34;actors.last_name&#34;</span>: <span style="color:#e6db74">&#34;Hopper&#34;</span>}
+                  }]}}}}]}}}
+<span style="color:#75715e">// 聚合查询
+</span><span style="color:#75715e"></span>{
+  <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">0</span>,
+  <span style="color:#f92672">&#34;aggs&#34;</span>: {
+    <span style="color:#f92672">&#34;actors&#34;</span>: {
+      <span style="color:#f92672">&#34;nested&#34;</span>: {
+        <span style="color:#f92672">&#34;path&#34;</span>: <span style="color:#e6db74">&#34;actors&#34;</span>
+      },
+      <span style="color:#f92672">&#34;aggs&#34;</span>: {
+        <span style="color:#f92672">&#34;actor_name&#34;</span>: {
+          <span style="color:#f92672">&#34;terms&#34;</span>: {
+            <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;actors.first_name&#34;</span>,
+            <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">10</span>}}}}}}
+</code></pre></div><h4 id="parentchild">
+  Parent/Child
+  <a class="anchor" href="#parentchild">#</a>
+</h4>
+<blockquote>
+<p>对象 和 Nested 对象的局限性：每次更新，需要重新索引整个对象（包括根对象和嵌套对象）。</p>
+</blockquote>
+<blockquote>
+<p>ES 提供了类似关系型数据库中 Join的实现。使用Join 数据类型实现，可以通过维护Parent/ Child 的关系，从而分离两个对象。</p>
+<p>父文档和子文档是两个独立的文档：更新父文档无需重新索引子文档。子文档被添加，更新或者删除也不会影响到父文档和其他的子文档。</p>
+</blockquote>
+<ul>
+<li>
+<p>定义父子关系：</p>
+<blockquote>
+<p>父文档和子文档必须存在相同的分片上，确保查询join的性能；当指定子文档的时候，必须指定其对应父文档id。</p>
+</blockquote>
+<ol>
+<li>
+<p>设置索引的Mapping</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">my_blogs</span>
+{
+  <span style="color:#f92672">&#34;mappings&#34;</span>: {
+    <span style="color:#f92672">&#34;properties&#34;</span>: {
+      <span style="color:#f92672">&#34;blog_comments_relation&#34;</span>: {
+        <span style="color:#75715e">// 指明join类型
+</span><span style="color:#75715e"></span>        <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;join&#34;</span>,
+        <span style="color:#75715e">// 声明Parent/Child关系
+</span><span style="color:#75715e"></span>        <span style="color:#f92672">&#34;relations&#34;</span>: {
+          <span style="color:#75715e">// blog-&gt;Parent名称
+</span><span style="color:#75715e"></span>          <span style="color:#75715e">// comment-&gt;Child名称
+</span><span style="color:#75715e"></span>          <span style="color:#f92672">&#34;blog&#34;</span>: <span style="color:#e6db74">&#34;comment&#34;</span>
+        }
+      },
+      <span style="color:#f92672">&#34;content&#34;</span>: {
+        <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;text&#34;</span>
+      },
+      <span style="color:#f92672">&#34;title&#34;</span>: {
+        <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;keyword&#34;</span>
+      }
+    }
+  }
+}
+</code></pre></div></li>
+<li>
+<p>索引父文档</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// blog1-&gt;父文档id
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">my_blogs/_doc/blog</span><span style="color:#ae81ff">1</span>
+{
+  <span style="color:#f92672">&#34;title&#34;</span>:<span style="color:#e6db74">&#34;Learning Elasticsearch&#34;</span>,
+  <span style="color:#f92672">&#34;content&#34;</span>:<span style="color:#e6db74">&#34;learning ELK @ geektime&#34;</span>,
+  <span style="color:#75715e">// 声明文档类型是父文档
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">&#34;blog_comments_relation&#34;</span>:{
+    <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;blog&#34;</span>
+  }
+}
+</code></pre></div></li>
+<li>
+<p>索引子文档</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// comment1-&gt;子文档id
+</span><span style="color:#75715e">// routing=blog1，确保和父文档索引到相同分片
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">my_blogs/_doc/comment</span><span style="color:#ae81ff">1</span><span style="color:#960050;background-color:#1e0010">?routing=blog</span><span style="color:#ae81ff">1</span>
+{
+  <span style="color:#f92672">&#34;comment&#34;</span>:<span style="color:#e6db74">&#34;I am learning ELK&#34;</span>,
+  <span style="color:#f92672">&#34;username&#34;</span>:<span style="color:#e6db74">&#34;Jack&#34;</span>,
+  <span style="color:#f92672">&#34;blog_comments_relation&#34;</span>:{
+    <span style="color:#f92672">&#34;name&#34;</span>:<span style="color:#e6db74">&#34;comment&#34;</span>,
+    <span style="color:#75715e">// 父文档id
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;parent&#34;</span>:<span style="color:#e6db74">&#34;blog1&#34;</span>
+  }
+}
+</code></pre></div></li>
+<li>
+<p>按需查询文档</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 查询所有（父子文档都会返回）
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">my_blogs/_search</span>
+{}
+<span style="color:#75715e">// Parent Id 查询（返回子文档）
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">my_blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;parent_id&#34;</span>: {
+      <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;comment&#34;</span>,
+      <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;blog2&#34;</span>
+    }
+  }
+}
+<span style="color:#75715e">// Has Child 查询,返回父文档
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">my_blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;has_child&#34;</span>: {
+      <span style="color:#f92672">&#34;type&#34;</span>: <span style="color:#e6db74">&#34;comment&#34;</span>,
+      <span style="color:#f92672">&#34;query&#34;</span> : {
+                <span style="color:#f92672">&#34;match&#34;</span>: {
+                    <span style="color:#f92672">&#34;username&#34;</span> : <span style="color:#e6db74">&#34;Jack&#34;</span>
+                }
+            }
+    }
+  }
+}
+<span style="color:#75715e">// Has Parent 查询，返回相关的子文档
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">my_blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;has_parent&#34;</span>: {
+      <span style="color:#f92672">&#34;parent_type&#34;</span>: <span style="color:#e6db74">&#34;blog&#34;</span>,
+      <span style="color:#f92672">&#34;query&#34;</span> : {
+                <span style="color:#f92672">&#34;match&#34;</span>: {
+                    <span style="color:#f92672">&#34;title&#34;</span> : <span style="color:#e6db74">&#34;Learning Hadoop&#34;</span>
+                }
+            }
+    }
+  }
+}
+</code></pre></div></li>
+</ol>
+</li>
+</ul>
+<h4 id="nested-vs-parentchild">
+  Nested vs Parent/Child
+  <a class="anchor" href="#nested-vs-parentchild">#</a>
+</h4>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Nested Object</th>
+<th>Parent/Child</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>优点</td>
+<td>文档存储在一起，读取性能高</td>
+<td>父子文档可以独立更新</td>
+</tr>
+<tr>
+<td>缺点</td>
+<td>更新嵌套的子文档时，需要更新整个文档</td>
+<td>需要额外的内存维护关系，读取时性能相对差</td>
+</tr>
+<tr>
+<td>适用场景</td>
+<td>子文档偶尔更新，以查询为主</td>
+<td>子文档频繁更新</td>
+</tr>
+</tbody>
+</table>
+<h2 id="重建索引">
+  重建索引
+  <a class="anchor" href="#%e9%87%8d%e5%bb%ba%e7%b4%a2%e5%bc%95">#</a>
+</h2>
+<h4 id="需要重建索引的场景">
+  需要重建索引的场景
+  <a class="anchor" href="#%e9%9c%80%e8%a6%81%e9%87%8d%e5%bb%ba%e7%b4%a2%e5%bc%95%e7%9a%84%e5%9c%ba%e6%99%af">#</a>
+</h4>
+<ol>
+<li>索引的Mapping 发生变更：字段类型更改，分词器及字典更新；</li>
+<li>索引的Settings 发生变更：索引的主分片数发生改变；</li>
+<li>集群内，集群间需要做数据迁移。</li>
+</ol>
+<h4 id="elasticsearch-的内置提供api">
+  Elasticsearch 的内置提供API
+  <a class="anchor" href="#elasticsearch-%e7%9a%84%e5%86%85%e7%bd%ae%e6%8f%90%e4%be%9bapi">#</a>
+</h4>
+<ul>
+<li>
+<p>Update By Query ：在现有索引上重建</p>
+<blockquote>
+<p>比如，新增加一个子字段a，使用_update_by_query可以使历史数据的a字段都被赋值。</p>
+</blockquote>
+</li>
+<li>
+<p>Reindex：在其他索引上重建索引</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span>  <span style="color:#960050;background-color:#1e0010">_reindex</span>
+{
+  <span style="color:#f92672">&#34;source&#34;</span>: {
+    <span style="color:#75715e">// 跨集群Reindex，除此之外还需要elasticsearch.yml中加上ip白名单，并重启集群
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;remote&#34;</span>: {
+      <span style="color:#f92672">&#34;host&#34;</span>: <span style="color:#e6db74">&#34;http://172.16.0.39:9200&#34;</span>
+    },
+    <span style="color:#75715e">// 支持多个，使用[]即可
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;index&#34;</span>: <span style="color:#e6db74">&#34;blogs&#34;</span>,
+    <span style="color:#75715e">// 不设置或设置为internal,会直接将文档转储到dest中，覆盖任何发生的具有相同类型和id的document
+</span><span style="color:#75715e"></span>    <span style="color:#75715e">// 使用external的话，只有当source的version更加新的时候，才更新
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;version_type&#34;</span>: <span style="color:#e6db74">&#34;external&#34;</span>,
+    <span style="color:#75715e">// 过滤条件
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;query&#34;</span>: {
+      <span style="color:#f92672">&#34;match&#34;</span>: {
+        <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;elasticsearch&#34;</span>
+      }
+    },
+    <span style="color:#75715e">// 默认1000
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;size&#34;</span>: <span style="color:#ae81ff">1000</span>,
+    <span style="color:#75715e">// 排序
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;sort&#34;</span>: { <span style="color:#f92672">&#34;date&#34;</span>: <span style="color:#e6db74">&#34;desc&#34;</span> },
+    <span style="color:#75715e">// 特定field
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;_source&#34;</span>: [<span style="color:#e6db74">&#34;user&#34;</span>, <span style="color:#e6db74">&#34;tweet&#34;</span>]
+  },
+  <span style="color:#f92672">&#34;dest&#34;</span>: {
+    <span style="color:#f92672">&#34;index&#34;</span>: <span style="color:#e6db74">&#34;blogs_fix&#34;</span>,
+    <span style="color:#75715e">//  只会创建不存在的文档，文档如果已经存在，会导致版本冲突。
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;op_type&#34;</span>: <span style="color:#e6db74">&#34;create&#34;</span>,
+    <span style="color:#75715e">// 使用Ingest Node
+</span><span style="color:#75715e"></span>    <span style="color:#f92672">&#34;pipeline&#34;</span>: <span style="color:#e6db74">&#34;some_ingest_pipeline&#34;</span>
+  },
+  <span style="color:#75715e">// 默认情况下，当发生version conflict的时候，_reindex会被abort。除非把conflicts设置为“proceed”
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">&#34;conflicts&#34;</span>: <span style="color:#e6db74">&#34;proceed&#34;</span>,
+  <span style="color:#75715e">// 使用脚本
+</span><span style="color:#75715e"></span>  <span style="color:#f92672">&#34;script&#34;</span>: {
+    <span style="color:#f92672">&#34;source&#34;</span>: <span style="color:#e6db74">&#34;if (ctx._source.foo == &#39;bar&#39;) {ctx._version++; ctx._source.remove(&#39;foo&#39;)}&#34;</span>,
+    <span style="color:#f92672">&#34;lang&#34;</span>: <span style="color:#e6db74">&#34;painless&#34;</span>
+  }
+}
+</code></pre></div><ul>
+<li>
+<p>使用场景：</p>
+<ul>
+<li>修改索引的主分片数；</li>
+<li>改变字段的Mapping 中的字段类型；</li>
+<li>集群内数据迁移/跨集群数据迁移。</li>
+</ul>
+</li>
+<li>
+<p>注意：</p>
+<ul>
+<li>需要启用_source；</li>
+<li>不会拷贝源索引settings，目标索引的mappings和settings需要已经定义好。</li>
+</ul>
+</li>
+<li>
+<p>使用Task API查询进度</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-http" data-lang="http"><span style="color:#960050;background-color:#1e0010">GET _tasks?detailed=true&amp;actions=*reindex
+</span></code></pre></div></li>
+<li>
+<p>取消reindex</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-http" data-lang="http"><span style="color:#960050;background-color:#1e0010">// task_id，可以通过上面的Task API获取
+</span><span style="color:#960050;background-color:#1e0010">POST _tasks/task_id:1/_cancel
+</span></code></pre></div></li>
+</ul>
+</li>
+</ul>
+<h2 id="ingest-pipeline">
+  Ingest Pipeline
+  <a class="anchor" href="#ingest-pipeline">#</a>
+</h2>
+<blockquote>
+<p>修复与增强写入数据，简化版logstash。</p>
+</blockquote>
+<h4 id="ingest-node">
+  Ingest Node
+  <a class="anchor" href="#ingest-node">#</a>
+</h4>
+<blockquote>
+<p>在Elasticsearch5.0之后，引入的一种新的节点类型。默认配置下，每个节点都是Ingest Node。有如下功能：</p>
+<ol>
+<li>具有预处理数据的能力，可以拦截Index 或 Bulk API 的请求；</li>
+<li>对数据进行转换，并重新返回给Index 或 Bulk API。</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>可以对数据进行一些预处理，例如：为某个字段设置默认值；重命名某个字段的字段名；对字段值进行split操作。同时支持设置Painless 脚本，对数据进行更加复杂的加工。</p>
+</blockquote>
+<h4 id="pipeline--processor">
+  Pipeline &amp; Processor
+  <a class="anchor" href="#pipeline--processor">#</a>
+</h4>
+<blockquote>
+<p>Pipeline：管道会对通过的数据（文档），按照顺序进行加工。</p>
+</blockquote>
+<blockquote>
+<p>Processor：Elasticsearch 对一些加工的行为进行了抽象包装。</p>
+<p>Elasticsearch 有很多内置的Processor。也支持通过插件的方式，实现自己的 Processor。</p>
+</blockquote>
+<p><img src="/images/es_pic/ingest.png" alt="" /></p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#75715e">// 为ES添加一个 Pipeline
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">_ingest/pipeline/blog_pipeline</span>
+{
+  <span style="color:#f92672">&#34;description&#34;</span>: <span style="color:#e6db74">&#34;a blog pipeline&#34;</span>,
+  <span style="color:#f92672">&#34;processors&#34;</span>: [
+      {
+        <span style="color:#f92672">&#34;split&#34;</span>: {
+          <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;tags&#34;</span>,
+          <span style="color:#f92672">&#34;separator&#34;</span>: <span style="color:#e6db74">&#34;,&#34;</span>
+        }
+      },
+
+      {
+        <span style="color:#f92672">&#34;set&#34;</span>:{
+          <span style="color:#f92672">&#34;field&#34;</span>: <span style="color:#e6db74">&#34;views&#34;</span>,
+          <span style="color:#f92672">&#34;value&#34;</span>: <span style="color:#ae81ff">0</span>
+        }
+      }
+    ]
+}
+<span style="color:#75715e">// 查看Pipleline
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">_ingest/pipeline/blog_pipeline</span>
+<span style="color:#75715e">// 使用pipeline更新数据
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">tech_blogs/_doc/</span><span style="color:#ae81ff">2</span><span style="color:#960050;background-color:#1e0010">?pipeline=blog_pipeline</span>
+{
+  <span style="color:#f92672">&#34;title&#34;</span>: <span style="color:#e6db74">&#34;Introducing cloud computering&#34;</span>,
+  <span style="color:#f92672">&#34;tags&#34;</span>: <span style="color:#e6db74">&#34;openstack,k8s&#34;</span>,
+  <span style="color:#f92672">&#34;content&#34;</span>: <span style="color:#e6db74">&#34;You konw, for cloud&#34;</span>
+}
+<span style="color:#75715e">// 使用pipeline重建索引数据
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">tech_blogs/_update_by_query?pipeline=blog_pipeline</span>
+{
+    <span style="color:#f92672">&#34;query&#34;</span>: {}
+}
+</code></pre></div><h4 id="内置processor">
+  内置Processor
+  <a class="anchor" href="#%e5%86%85%e7%bd%aeprocessor">#</a>
+</h4>
+<ol>
+<li>
+<p>Split Processor</p>
+</li>
+<li>
+<p>Remove/Rename Processor</p>
+<blockquote>
+<p>（例：移除一个重命名字段）</p>
+</blockquote>
+</li>
+<li>
+<p>Append</p>
+<blockquote>
+<p>（为商品增加一个新的标签）</p>
+</blockquote>
+</li>
+<li>
+<p>Convert</p>
+<blockquote>
+<p>（将商品价格，从字符串转换成float类型）</p>
+</blockquote>
+</li>
+<li>
+<p>Date / JSON</p>
+<blockquote>
+<p>日期格式转换，字符串转JSON对象</p>
+</blockquote>
+</li>
+<li>
+<p>Date Index Name Processor</p>
+<blockquote>
+<p>（通过该处理器的文档，分配到指定时间格式的索引中）</p>
+</blockquote>
+</li>
+<li>
+<p>Fail Processor</p>
+<blockquote>
+<p>（一旦出现异常，该Pipeline指定的错误信息能返回给用户）</p>
+</blockquote>
+</li>
+<li>
+<p>Foreach Processor</p>
+<blockquote>
+<p>（数组字段，数组的每个元素都会使用到一个相同的处理器）</p>
+</blockquote>
+</li>
+<li>
+<p>Grok Processor</p>
+<blockquote>
+<p>（日志的日期格式切割）</p>
+</blockquote>
+</li>
+<li>
+<p>Gsub/Join/Split</p>
+<blockquote>
+<p>（字符串替换/数组转换字符串/字符串转数组）Lowercase/ upcase （大小写转换）</p>
+</blockquote>
+</li>
+</ol>
+<h4 id="ingest-node-和-logstash比较">
+  Ingest Node 和 Logstash比较
+  <a class="anchor" href="#ingest-node-%e5%92%8c-logstash%e6%af%94%e8%be%83">#</a>
+</h4>
+<table>
+<thead>
+<tr>
+<th></th>
+<th>Logstash</th>
+<th>Ingest Node</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>数据输入与输出</td>
+<td>支持从不同的数据源读取，并写入不同的数据源</td>
+<td>支持从ES Rest api获取数据，并写入ES</td>
+</tr>
+<tr>
+<td>数据缓冲</td>
+<td>实现了简单的数据队列，支持重写</td>
+<td>不支持缓冲</td>
+</tr>
+<tr>
+<td>数据处理</td>
+<td>支持大量的插件，也支持定制开发</td>
+<td>内置有插件，也可开发插件进行扩展</td>
+</tr>
+<tr>
+<td>配置与使用</td>
+<td>增加了一定的架构复杂度</td>
+<td>无需额外部署</td>
+</tr>
+</tbody>
+</table>
+<h2 id="painless">
+  Painless
+  <a class="anchor" href="#painless">#</a>
+</h2>
+<blockquote>
+<p>Elasticsearch 5.x 后引入，专门为Elasticsearch 设计，扩展了Java 的语法；6.0 开始，Elasticsearch 只支持Painless。Grovvy，JavaScript，Python 都不再支持；Painless 支持所有Java 的数据类型及Java APi子集；Painless Script 具备以下特性：</p>
+<ol>
+<li>高性能/安全；</li>
+<li>支持显示类型或者动态定义类型。</li>
+</ol>
+</blockquote>
+<h4 id="用途">
+  用途
+  <a class="anchor" href="#%e7%94%a8%e9%80%94">#</a>
+</h4>
+<ol>
+<li>
+<p>对文档字段进行加工处理：</p>
+<blockquote>
+<ol>
+<li>更新或删除字段，处理数据聚合操作；</li>
+<li>Script Field：对返回的字段提前进行计算；</li>
+<li>Funcation Score：对文档算分进行处理。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>在Ingest Pipeline 中执行脚本；</p>
+</li>
+<li>
+<p>在Reindex API，Update By Query 时，对数据进行处理。</p>
+</li>
+</ol>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">tech_blogs/_update/</span><span style="color:#ae81ff">1</span>
+{
+  <span style="color:#f92672">&#34;script&#34;</span>: {
+    <span style="color:#f92672">&#34;source&#34;</span>: <span style="color:#e6db74">&#34;ctx._source.views += params.new_views&#34;</span>,
+    <span style="color:#f92672">&#34;params&#34;</span>: {
+      <span style="color:#f92672">&#34;new_views&#34;</span>:<span style="color:#ae81ff">100</span>
+    }
+  }
+}
+<span style="color:#75715e">// 保存脚本在 Cluster State
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">_scripts/update_views</span>
+{
+  <span style="color:#f92672">&#34;script&#34;</span>:{
+    <span style="color:#f92672">&#34;lang&#34;</span>: <span style="color:#e6db74">&#34;painless&#34;</span>,
+    <span style="color:#f92672">&#34;source&#34;</span>: <span style="color:#e6db74">&#34;ctx._source.views += params.new_views&#34;</span>
+  }
+}
+<span style="color:#75715e">// 使用脚本
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">POST</span> <span style="color:#960050;background-color:#1e0010">tech_blogs/_update/</span><span style="color:#ae81ff">1</span>
+{
+  <span style="color:#f92672">&#34;script&#34;</span>: {
+    <span style="color:#f92672">&#34;id&#34;</span>: <span style="color:#e6db74">&#34;update_views&#34;</span>,
+    <span style="color:#f92672">&#34;params&#34;</span>: {
+      <span style="color:#f92672">&#34;new_views&#34;</span>:<span style="color:#ae81ff">1000</span>
+    }
+  }
+}
+<span style="color:#75715e">// query时候加一个新字段
+</span><span style="color:#75715e"></span><span style="color:#960050;background-color:#1e0010">GET</span> <span style="color:#960050;background-color:#1e0010">tech_blogs/_search</span>
+{
+  <span style="color:#f92672">&#34;script_fields&#34;</span>: {
+    <span style="color:#f92672">&#34;rnd_views&#34;</span>: {
+      <span style="color:#f92672">&#34;script&#34;</span>: {
+        <span style="color:#f92672">&#34;lang&#34;</span>: <span style="color:#e6db74">&#34;painless&#34;</span>,
+        <span style="color:#f92672">&#34;source&#34;</span>: <span style="color:#e6db74">&#34;&#34;&#34;
+</span><span style="color:#e6db74">          java.util.Random rnd = new Random();
+</span><span style="color:#e6db74">          doc[&#39;views&#39;].value+rnd.nextInt(1000);
+</span><span style="color:#e6db74">        &#34;&#34;&#34;</span>
+      }
+    }
+  },
+  <span style="color:#f92672">&#34;query&#34;</span>: {
+    <span style="color:#f92672">&#34;match_all&#34;</span>: {}
+  }
+}
+</code></pre></div><h4 id="通过painless-脚本访问字段">
+  通过Painless 脚本访问字段
+  <a class="anchor" href="#%e9%80%9a%e8%bf%87painless-%e8%84%9a%e6%9c%ac%e8%ae%bf%e9%97%ae%e5%ad%97%e6%ae%b5">#</a>
+</h4>
+<table>
+<thead>
+<tr>
+<th>上下文</th>
+<th>语法</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>Ingestion</td>
+<td>ctx.field_name</td>
+</tr>
+<tr>
+<td>Update</td>
+<td>ctx._source.field_name</td>
+</tr>
+<tr>
+<td>Search &amp; Aggregation</td>
+<td>doc[&ldquo;field_name&rdquo;]</td>
+</tr>
+</tbody>
+</table>
+<h4 id="脚本缓存">
+  脚本缓存
+  <a class="anchor" href="#%e8%84%9a%e6%9c%ac%e7%bc%93%e5%ad%98">#</a>
+</h4>
+<blockquote>
+<p>编译的开销比较大，Elasticsearch 会将脚本编译后缓存在Cache中，Inline scripts 和 Stored Scripts 都会被缓存（默认缓存 100 个脚本）。</p>
+</blockquote>
+<table>
+<thead>
+<tr>
+<th>参数</th>
+<th>说明</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td>script.cache.max_size</td>
+<td>设置最大缓存数</td>
+</tr>
+<tr>
+<td>script.cache.expire</td>
+<td>设置缓存超时</td>
+</tr>
+<tr>
+<td>script.max_compilations_rate</td>
+<td>默认5分钟最多75次编译（75/5m）</td>
+</tr>
+</tbody>
+</table>
+<h2 id="数据建模">
+  数据建模
+  <a class="anchor" href="#%e6%95%b0%e6%8d%ae%e5%bb%ba%e6%a8%a1">#</a>
+</h2>
+<blockquote>
+<p>数据建模（Data modeling），是创建数据模型的过程，数据模型是对真实世界进行抽象描述的一种工具和方法，实现对现实世界的映射。建模的三个过程：概念模型-》 逻辑模型-》 数据模型（第三范式）。</p>
+</blockquote>
+<blockquote>
+<p>数据建模需要从两方面考虑，功能需求和性能需求：</p>
+</blockquote>
+<ul>
+<li>
+<p>功能需求-逻辑模型</p>
+<blockquote>
+<ol>
+<li>实体属性</li>
+<li>实体之间的关系</li>
+<li>搜索相关的配置</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>性能需求- 物理模型</p>
+<blockquote>
+<ol>
+<li>索引模板：分片数量</li>
+<li>索引 Mapping：字段配置、关系处理</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+<h4 id="字段建模">
+  字段建模
+  <a class="anchor" href="#%e5%ad%97%e6%ae%b5%e5%bb%ba%e6%a8%a1">#</a>
+</h4>
+<p><img src="/images/es_pic/field_model.png" alt="" /></p>
+<ul>
+<li>
+<p>字段类型</p>
+<blockquote>
+<ol>
+<li>
+<p>Text；</p>
+<p>用于全文本字段，文本会被 Analyzer分词；默认不支持聚合分析及排序。需要设置 fielddata 为 true。</p>
+</li>
+<li>
+<p>Keyword；</p>
+<p>用于id，枚举及不需要分词的文本。例如电话号码，email地址，手机号码，邮政编码，性别等；适用于Filter（精确匹配），Sorting 和 Aggregations。</p>
+</li>
+<li>
+<p>多字段类型；</p>
+<p>默认会为文本类型设置为text，并且设置一个keyword的子字段；在处理人类语言时，通过增加 英文 ，拼音 和 标准 分词器， 提高搜索结构。</p>
+</li>
+<li>
+<p>数值类型；</p>
+<p>尽量选择贴近的类型。例如可以用byte，就不要用long。</p>
+</li>
+<li>
+<p>枚举类型；</p>
+<p>设置为keyword。即便是数字，也应该设置成keyword，获取更加好的性能。</p>
+</li>
+<li>
+<p>其他。</p>
+<p>日期/布尔/地理信息。</p>
+</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>是否要搜索以及分词</p>
+<blockquote>
+<p>如果不需要检索，排序和聚合分析，Enable 设置成false；</p>
+<p>如果不需要检索：Index 设置成false；</p>
+<p>如果需要检索的字段，可以通过如下配置，设定存储粒度：Index options/ Norms：不需要归一化数据时，可以关闭。</p>
+</blockquote>
+</li>
+<li>
+<p>是否要聚合以及排序</p>
+<blockquote>
+<p>如果不需要检索，排序和聚合分析，Enable 设置成false；</p>
+<p>如果不需要排序或者聚合分析功能，Doc_values / fielddata 设置成false。</p>
+<p>更新频繁，聚合查询频繁的keyword 类型的字段推荐将 eager_global_ordinals设置为 true（缓存）。</p>
+</blockquote>
+</li>
+<li>
+<p>是否需要额外存储</p>
+<ul>
+<li>
+<p>是否需要专门存储当前字段数据</p>
+<blockquote>
+<p>Store 设置成 true，可以存储该字段的原始内容，一般结合_source 的enabled 为 false时候使用。</p>
+</blockquote>
+</li>
+<li>
+<p>Disable _source：节约磁盘；适用于指标型数据</p>
+<blockquote>
+<p>一般建议先考虑增加压缩比；无法看到_source字段，无法ReIndex，无法做Update。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="mapping设置">
+  Mapping设置
+  <a class="anchor" href="#mapping%e8%ae%be%e7%bd%ae">#</a>
+</h4>
+<blockquote>
+<ol>
+<li>Enabled - 设置成fasle，仅做存储，不支持搜索和聚合分析（数据保存在_source中）；</li>
+<li>_Index - 是否构倒排索引。设置为 false，无法被搜索，但还支持aggregation，并且出现在_source中；</li>
+<li>Norms - 如果字段用来过滤和聚合分析，可以关闭，节约存储；</li>
+<li>Doc_values - 是否启动doc_values，用于排序和聚合分析；</li>
+<li>Field_data - 如果要对text类型启用排序和聚合分析，需要设置为true；</li>
+<li>Store - 默认不存储，数据默认存储在_source；</li>
+<li>Coerce - 默认开启，是否开启数据类型的自动转换（例如，字符串转数字）；</li>
+<li>Multifields 多字段特性；Dynamic - true/false/strict 控制Mapping的自动更新。</li>
+</ol>
+</blockquote>
+<h4 id="一些相关的api">
+  一些相关的API
+  <a class="anchor" href="#%e4%b8%80%e4%ba%9b%e7%9b%b8%e5%85%b3%e7%9a%84api">#</a>
+</h4>
+<ul>
+<li>
+<p>Index Template &amp; Dynamic Template</p>
+<blockquote>
+<p>根据索引名字匹配不同的Mappings 和 Settings；可以在一个Mapping 上动态的设定字段类型</p>
+</blockquote>
+</li>
+<li>
+<p>Index Alias</p>
+<blockquote>
+<p>无需停机，无需修改程序，即可进行修改。</p>
+</blockquote>
+</li>
+<li>
+<p>Update By Query &amp; Reindex</p>
+</li>
+</ul>
+<h2 id="最佳实践">
+  最佳实践
+  <a class="anchor" href="#%e6%9c%80%e4%bd%b3%e5%ae%9e%e8%b7%b5">#</a>
+</h2>
+<h4 id="处理关联关系-1">
+  处理关联关系
+  <a class="anchor" href="#%e5%a4%84%e7%90%86%e5%85%b3%e8%81%94%e5%85%b3%e7%b3%bb-1">#</a>
+</h4>
+<p><img src="/images/es_pic/relative.png" alt="" /></p>
+<h4 id="避免过多字段">
+  避免过多字段
+  <a class="anchor" href="#%e9%81%bf%e5%85%8d%e8%bf%87%e5%a4%9a%e5%ad%97%e6%ae%b5">#</a>
+</h4>
+<blockquote>
+<p>一个文档中，最好避免大量的字段，因为：</p>
+<ol>
+<li>
+<p>过多的字段数不容易维护；</p>
+</li>
+<li>
+<p>Mapping 信息保存在Cluster State 中，数据量过大，对集群性能会有影响（Cluster State信息需要 和所有的节点同步）；</p>
+</li>
+<li>
+<p>删除或者修改数据需要reindex。</p>
+</li>
+</ol>
+</blockquote>
+<ul>
+<li>
+<p>默认最大字段是 1000， 参数：index.mapping.total_fields.limit；</p>
+</li>
+<li>
+<p>Dynamic vs Strict</p>
+<ul>
+<li>Dynamic （生产环境，尽量不要打开Dynamic）
+<ul>
+<li>true - 未知字段会被自动加入；</li>
+<li>false - 新字段不会被索引。但是会保存在_source；</li>
+<li>strict - 新增字段不会被索引，文档写入失败。</li>
+</ul>
+</li>
+</ul>
+</li>
+<li>
+<p>使用Nested类型，解决字段膨胀问题。</p>
+<blockquote>
+<p>通过Nested 对象保存Key/Value，解决Cluster State保存过多Meta信息，但是：</p>
+<ol>
+<li>导致查询语句复杂度增加；</li>
+<li>不利于在Kibana 中实现可视化分析。</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+<h4 id="避免正则查询">
+  避免正则查询
+  <a class="anchor" href="#%e9%81%bf%e5%85%8d%e6%ad%a3%e5%88%99%e6%9f%a5%e8%af%a2">#</a>
+</h4>
+<blockquote>
+<p>正则，通配符查询，前缀查询数据Term 查询，但是性能不够好，特别是将通配符放在开头，会导致性能的灾难。</p>
+</blockquote>
+<p>解决：</p>
+<ol>
+<li>将字符串转化为对象；</li>
+<li>比如版本信息，7.1.2，用四个字段存储。</li>
+</ol>
+<h4 id="避免空值引起聚合不准">
+  避免空值引起聚合不准
+  <a class="anchor" href="#%e9%81%bf%e5%85%8d%e7%a9%ba%e5%80%bc%e5%bc%95%e8%b5%b7%e8%81%9a%e5%90%88%e4%b8%8d%e5%87%86">#</a>
+</h4>
+<blockquote>
+<p>设置null_value属性。</p>
+</blockquote>
+<h4 id="为索引的mapping-加入meta信息">
+  为索引的mapping 加入meta信息
+  <a class="anchor" href="#%e4%b8%ba%e7%b4%a2%e5%bc%95%e7%9a%84mapping-%e5%8a%a0%e5%85%a5meta%e4%bf%a1%e6%81%af">#</a>
+</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-json" data-lang="json"><span style="color:#960050;background-color:#1e0010">PUT</span> <span style="color:#960050;background-color:#1e0010">softwares/</span>
+{
+  <span style="color:#f92672">&#34;mappings&#34;</span>: {
+    <span style="color:#f92672">&#34;_meta&#34;</span>: {
+      <span style="color:#f92672">&#34;software_version_mapping&#34;</span>: <span style="color:#e6db74">&#34;1.0&#34;</span>
+    }
+  }
+}
+</code></pre></div><ul>
+<li>Mappings 设置非常重要，需要从两个维度进行考虑
+<ul>
+<li>功能：搜索，聚合，排序</li>
+<li>性能：存储的开销；内存的开销；搜索的开销</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>Mappings 设置是一个迭代的过程</p>
+<p>加入新的字段很容易（必要时需要update_by_query）</p>
+<p>更新删除字段不允许（需要Reindex重建数据）</p>
+<p>最好能对Mappings 加入Meta信息，更好的进行版本管理可以考虑将 Mapping 文件上传git 进行管理</p>
+</blockquote>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#反范式化设计">反范式化设计</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#处理关联关系">处理关联关系</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#重建索引">重建索引</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#ingest-pipeline">Ingest Pipeline</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#painless">Painless</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#数据建模">数据建模</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#最佳实践">最佳实践</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
