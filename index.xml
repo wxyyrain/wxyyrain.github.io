@@ -6,7 +6,7 @@
     <description>Recent content on My New Hugo Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 30 Jan 2022 10:20:01 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 26 Feb 2022 12:11:09 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/index.xml" rel="self" type="application/rss+xml" />
     <item>
       <title>前置知识</title>
       <link>https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/</link>
@@ -27,6 +27,30 @@ Recall = True Postive / (True Positives + False Negtives)</description>
     </item>
     
     <item>
+      <title>索引</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/1_index/</link>
+      <pubDate>Thu, 27 Jan 2022 08:58:27 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/1_index/</guid>
+      <description>索引的类型 #   索引的出现是为了提高数据查询的效率，就像书的目录一样。实现索引的方式也有很多种，MySQL有如下几种类型的索引。
+ 哈希索引 #   哈希索引是基于哈希表这种数据结构的索引。
+   优点
+ 新增、精确查询都很快，O(1)的时间复杂度。
+   缺点
+  无法用于排序和分组； 区间查询很慢。     适用场景：等值查询
+  全文索引 #   MyISAM存储引擎支持全文索引，用于查找文本中的关键词，而不是直接比较是否相等。 查找条件使用MATCH AGAINST，而不是普通的WHERE。
+全文索引使用倒排索引实现，它记录着关键词到其所在文档的映射。
+InnoDB存储引擎在MySQL 5.6.4 版本中也开始支持全文索引。
+ B+树索引 #  不同数据结构的出现，主要是为了解决不同场景，不同操作的效率问题。B+树是适合存在磁盘的数据结构，它有以下特点：
+  B+树的每个节点都是一页；
+ 从磁盘读取数据的时候，并不是一条一条读的，而是读“一块”（好几条）数据到内存。在MySQL中，这“一块”的单位就是页，默认大小为16k。
+   B+树是N叉树，N取决于字段的大小和页的大小；
+ 假设一棵二叉树高度为5，目标值在树的底部，那么在进行深度优先搜索过程中，就需要经过5个节点。对于存储在磁盘的B+树来说，经过5个节点就意味着要查询5次磁盘，是比较耗时的操作。如果这棵树的高度低一些，就意味着可以少进行几次查询磁盘的操作。
+  同样一棵树，每个节点的子节点（扇出）越多，那么它的树高也越低。所以B+树是N叉树的结构，是更适合磁盘的数据结构。
+  以整数（bigint）字段索引为例，一个key为8B，一个引用约为6B，所以一条数据的索引占据空间约为14B，一页可以存：16K/14B ≈ 1170 条数据的索引，也就是说，此时N = 1170，是1170叉树。</description>
+    </item>
+    
+    <item>
       <title>基本使用</title>
       <link>https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/</link>
       <pubDate>Sat, 22 Jan 2022 10:58:18 +0800</pubDate>
@@ -41,6 +65,70 @@ Recall = True Postive / (True Positives + False Negtives)</description>
    JSON文档 #   字段的类型可以通过指定或者通过Elasticsearch自动推算； 支持数组/嵌套。  文档元数据 #   _index：文档所属的索引名； _type：文档所属的类型名； _id：文档的唯一ID； _source：文档的原始JSON数据； _all：整合所有字段内容到该字段，已被废除； _version：文档的版本信息； _score：相关性打分。  Response元数据 #   took：花费的时间； total：符合条件的总文档数； hits：结果集，默认前十个文档； _index：索引名； _id：文档的id； _score：相关度评分； _source：文档原始信息。  索引（Index） #   索引是文档的容器，是一类文档的集合。Index体现了逻辑空间的概念：每个索引都有自己的Mapping定义，用于定义包含的文档字段名和字段类型；Shard体现了物理空间的概念：索引中的数据分散在Shard上。
    Mapping定义文档字段的类型
   Setting定义不同的数据分布</description>
+    </item>
+    
+    <item>
+      <title>数据复制</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/data_copy/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/data_copy/</guid>
+      <description>复制主要指通过互联网络在多台机器上保存相同数据的副本。通过数据复制方案，通常希望达到以下目的：
+  使数据在地理位置上更接近用户，从而降低访问延迟； 当部分组件出现故障，系统依然可以继续工作，从而提高可用性； 扩展至多台机器以同时提供数据访问服务，从而提高读吞吐量。   复制的数据并非一成不变，一般采用主从复制、多主节点复制和无主节点复制三种方案，处理那些持续更改的数据。
+ 主节点与从节点 #  主从复制原理：
+ 指定一个副本为主副本（或称为主节点）。当客户写数据库时，必须将写请求发送给主副本，主副本首先将新数据写入本地存储； 其他副本则全部称为从副本（或称为从节点）。主副本把新数据写入本地存储后，然后将数据更改作为复制的日志或更改流发送给所有从副本。每个从副本获得更改日志之后将其应用到本地，且严格保持与祝副本相同的写入顺序； 客户端从数据库中读数据时，可以在主副本或者从副本上执行查询。  同步/异步复制 #    同步
+ 同步复制主节点需要等待直到从节点确认完成了写入 。
+  优点：主从数据一致（万一主节点发生故障，可以在从节点访问最新数据）； 缺点：从节点无法完成确认的话（例如从节点崩溃或网络原因），写入不能视为成功。主节点会阻塞其后所有写操作，直到同步副本确认完成。    异步
+ 异步复制主节点发送消息后立即返回不用等待从节点确认 。
+  优点：从节点落后不会影响主节点响应写请求，系统吞吐性能更好； 缺点：数据不同步；如果主节点失败且不可恢复，所有尚未复制到从节点的写请求将丢失。   异步复制被广泛使用。场景：节点数据巨大；分布于广域地理环境。
+   半同步
+ 半同步，一个从节点同步，其他异步。
+  优点：至少两个节点拥有最新的数据副本。    链式同步
+  配置新的从节点 #   某个时间点对主节点的数据副本产生一个一致性快照 ； 将此快照拷贝到新的从节点 ； 从节点连接主节点请求快照点之后的的数据变更日志 ； 从节点处理快照点之后的数据变更，称为 追赶。  处理节点失效 #    从节点失效：追赶式恢复</description>
+    </item>
+    
+    <item>
+      <title>数据分区</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/data_shard/</link>
+      <pubDate>Mon, 31 Jan 2022 15:32:20 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/data_shard/</guid>
+      <description>分区通常是这样定义的，即每一条数据（或者每条记录，每行或每个文档）只属于某个特定分区。每个分区都可以视为一个完整的小型数据库，虽然数据库可能存在一些跨分区的操作。
+  采用分区的主要目的是提高可扩展性。不同的分区可以放在一个无共享集群的不同节点上。这样一个大数据集可以分散在更多的磁盘上，查询负载也随之分不到更多的处理器上。
+  对单个分区进行查询时，每个节点对自己所在分区可以独立执行查询操作，因此添加更多的节点可以提高查询吞吐量。超大而复杂的查询尽管比较困难，但也可能做到跨节点的并行处理。
+ 数据分区与数据复制 #   分区通常与复制结合使用，即每个分区在多个节点都存有副本。这意味着某条记录属于特定的分区，而同样的内容会保存在不同的节点上以提高系统的容错性。
+ 键-值数据分区 #   分区的主要目标是将数据和查询负载均匀分布在所有节点上。
+   倾斜
+ 而如果分区不均匀，则会出现某些分区节点比其他分区承担更多的数据量或查询负载，称之为倾斜。
+  倾斜会导致分区效率严重下降。在极端情况下，所有负载可能集中在一个分区节点上，这就意味着系统瓶颈在最烦忙的那个节点上。这种负载严重不成比例的分区即成为系统热点。
+   避免热点
+ 避免热点最简单的方法是将记录随机分配给所有的节点上。可以比较均匀的分布数据，但当试图读取特定数据时，不得不并行查询所有节点。
+  改进上述方法，通过关键字来访问记录。
+   基于关键字区间分区 #   为每个分区分配一段连续的关键字或者关键字区间范围（以最小值和最大值来指示）。
+   关键字的区间不一定非要均匀分布，因为数据本身可能就不均匀；
+ 例如，A和B开头的单词，一般比T、U、V、X、Y开头的单词多。如果只是简单的规定每个分区两个字母，可能导致有的分区比其他分区大很多。
+   分区边界可以由管理员手动确定，或者由数据库自动选择；
+  每个分区可以按照关键字排序保存；
+ 这样可以轻松支持区间查询。
+   缺点：某些访问模式可能导致热点。
+ 如果关键字是时间戳，假设每天一个分区，可能导致每天写入数据时候，所有写入操作都集中在一个分区，导致该分区在写入时负载过高，而其他分区空闲。
+   解决</description>
+    </item>
+    
+    <item>
+      <title>锁</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/lock/</link>
+      <pubDate>Fri, 28 Jan 2022 15:30:52 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/lock/</guid>
+      <description>全局锁 #  对整个数据库加读锁：
+Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处于只读状态，其它线程以下这些操作会被阻塞：
+ 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。   使用场景； 全库逻辑备份，也就是对整个库select出来成文本。 使用风险；   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表+1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
+  官方自带逻辑备份工具：mysqldump；   当mysqldump使用参数-single-transaction的时候，导数据之前会启动一个事务，确保拿到一致性视图。由于MVCC的支持，这个过程是可以更新的。
+  有的存储引擎（比如MyIsAM）不支持事务，没有一致性读，这个时候就只能使用FTWRL了。
+  只读配置：set global readonly=true。  全库只读还可以通过这个配置来实现，但一般我们不使用，原因如下：
+ 异常处理机制的差异：执行FTWRL命令发生异常后，会自动释放全局锁，数据库会回到可更新的状态；如果是使用set global readonly=true的方式，发生异常后数据库仍然处于只读状态； 有些系统中，readonly 的值会被用来做其他逻辑，比如用来判断一个库是主库还是备库。  表级锁 #  表锁 #  表锁的语法：
+## 加锁 lock tables … read/write ## 主动解锁 unlock tables 在客户端断开连接时，会主动释放锁。 loack tables除了限定别的线程的读写外，也限定了本线程接下来的操作对象：</description>
     </item>
     
     <item>
@@ -62,6 +150,68 @@ Recall = True Postive / (True Positives + False Negtives)</description>
     </item>
     
     <item>
+      <title>事务</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/transaction/</link>
+      <pubDate>Sat, 26 Feb 2022 12:11:09 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/transaction/</guid>
+      <description>隔离性 #  隔离级别 #   读未提交（read uncommitted）； 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题） 读提交（read committed）； 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题） 可重复读（repeatable read）； 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。 串行化（serializable）。 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。  不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
+ 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  MVCC #   read view 实现mvcc用到的一致性视图，即 consistent read view，用于支持RC和RR隔离级别的实现。   RC级别下，每一个SQL语句创建一个read view；RR隔离级别下，在事务一开始创建一个read view并一直使用。
+  事务id InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。   每行数据都有一个隐藏字段row_trx_id，这个字段的值就是transaction id。
+  undo log 每条记录在更新的的同时会记录一条回滚操作（undo log），记录上最新的值，可以通过回滚操作，得到前一个状态的值。同一条记录在系统可以存在多个版本，这就是数据库的多版本并发控制（MVCC）。   回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。
+  可重复读实现   事务数组：InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id； 低水位：数组里面事务id的最小值； 高水位：当前系统里面已经创建过的事务id最大值+1； 一致性视图：由事务数组和高水位组成。  数据版本的可见性，基于数据的row_trx_id和一致性视图对比的结果。对于当前事务启动瞬间来说，一个数据版本的row_trx_id可能有几种情况：</description>
+    </item>
+    
+    <item>
+      <title>日志</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/log/</link>
+      <pubDate>Sat, 26 Feb 2022 12:10:07 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/log/</guid>
+      <description>使用InnoDB引擎过程中，比较耳熟能详的三种日志：
+ undo log：用于回滚； redo log：崩溃恢复； bin log：备份、主从同步。  WAL技术：Write-Ahead Logging，先写日志，再写磁盘。
+ 如果每一次更新操作都要写入磁盘，查找+写入的IO成本很高，使用WAL技术可以避免。
+ redo log 重做日志 #   InnoDB 引擎就会先把记录写到 redo log里面，并更新内存，这个时候更新就算完成了； 同时，InnoDB 引擎会在适当的时候，将这个操作记录更新到磁盘里面，而这个更新往往是在系统比较空闲的时候做。  redo log的大小是固定的，可以配置为一组四个的文件，每个文件的大小是1GB，那么总共就可以记录4GB的操作。从头开始写，写到末尾就回到开头循环写。
+ write pos：当前记录的位置，一边写一遍后移，写到3号文件末尾就回到0号文件开头； check point：当前要擦除的位置，也是往后推移并且循环的，擦除记录前要把记录更新到数据文件； write pos和check point之间是空白位置，可以用来记录新的操作。如果write pos追上了check point，这时不能再执行更新操作，要先停下来擦除一些记录，把check point 推进一下。   个人理解redo log其实是利用了磁盘的顺序写提高性能；redo log保证了crash-safe，已提交的数据不会丢失。
+ binlog 归档日志 #   归档：同义词为存档，指将处理完并且具有保存价值的事情或文件经系统整理后交档案室（馆）保存备案(备查)的过程。
+ 与 redo log 的不同 #   redo log是InnoDB引擎特有的；bin log是MySQLServer层实现的，所有引擎都可以使用； redo log是物理日志，记录的是“在某个数据页上做了什么修改”；binlog是逻辑日志，记录的是这个语句的原始逻辑； redo log是循环写的，空间固定会被用完；binlog是可以追加写入的。追加写”是指 binlog 文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。  为什么有两份日志 #  最开始MySQL的设计是用binlog作为归档用途，且MySQL刚开始是没有crash-safe能力的。后面出现了InnoDB引擎，通过redo log实现了crash-safe。</description>
+    </item>
+    
+    <item>
+      <title>分布式系统的挑战</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/challenge/</link>
+      <pubDate>Fri, 25 Feb 2022 08:47:40 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/challenge/</guid>
+      <description>故障与部分失效 #  不可靠的网络 #  不可靠的时钟 #  知识、真相与谎言 #  </description>
+    </item>
+    
+    <item>
+      <title>事务</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/transaction/</link>
+      <pubDate>Tue, 08 Feb 2022 12:57:31 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/transaction/</guid>
+      <description>事务将应用程序的多个读、写操作捆绑在一起成为一个逻辑操作单元。即事务中的所有读写是一个执行的整体，整个事务要么成功（提交）、要么失败（中止或回滚）。
+  事务目的是简化应用层的编程模型。
+ 深入理解事务 #  ACID #   事务所提供的安全保证即大家所熟知的ACID。最早由TheoHarder和Andreas Reuter于1983年为精确描述数据库的容错机制而定义。
+  不符合ACID标准的系统有时被冠以BASE，取另外几个特性的首字母，即基本可用性（ Basically Available ），软状态（ Soft state ）和最终一致性（ Eventunal consistency)。
+   原子性
+ 原子性在计算机的不同领域里有着相似但却微妙的差异。
+  例如，多线程编程中，如果某线程执行一个原子操作，这意味着其他线程是无法看到该操作的中间结果。它只能处于操作之前或操作之后的状态，而不是两者之间的状态。
+  ACID 中的原子性并不关乎多个操作的并发性，它并没有描述多个线程试图访问相同的数据会发生什么情况，后者其实是由 ACID 的隔离性所定义。
+  ACID 中原子性所定义的特征是：在出错时中止事务，并将部分完成的写入全部丢弃。
+   一致性
+ ACID 中的一致性的主要是指对数据有特定的预期状态，任何数据更改必须满足这些状态约束（或者恒等条件）。
+  例如，对于一个账单系统，账户的贷款余额应和借款余额保持平衡。如果某事务从一个有效的状态开始，并且事务中任何更新操作都没有违背约束，那么最后的结果依然符合有效状态。
+  这种一致性本质上要求应用层来维护状态一致。
+  原子性，隔离性和持久性是数据库自身的属性，而ACID中的一致性更多是应用层的属性。 应用程序可能借助数据库提供的原子性和隔离性，以达到一致性，但一致性本身并不源于数据库。
+   隔离性
+ ACID语义中的隔离性意味着并发执行的多个事务相互隔离，它们不能互相交叉。
+  经典的数据库教材把隔离定义为可串行化，这意味着可以假装它是数据库上运行的唯一事务。虽然实际上它们可能同时运行，但数据库系统要确保当事务提交时，其结果与串行执行完全相同。</description>
+    </item>
+    
+    <item>
       <title>搜索</title>
       <link>https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/</link>
       <pubDate>Sun, 26 Dec 2021 14:53:16 +0800</pubDate>
@@ -75,6 +225,15 @@ Recall = True Postive / (True Positives + False Negtives)</description>
 查询的时候，会先对输入的查询进行分词，然后每个词项逐个进行底层的查询，最终将结果进行合并，并为每个文档生成一个算分。
  如下，查 “Matrix reloaded”，会查到包括Matrix或者reload的所有结果。
  一些全文Query  Match Query Match Phrase Query Query String Query    查询结果比较 #  假设有一条文档：{ &amp;ldquo;productID&amp;rdquo; : &amp;ldquo;XHDK-A-1293-#fJ3&amp;rdquo;,&amp;ldquo;desc&amp;rdquo;:&amp;ldquo;iPhone&amp;rdquo; }，desc字段是text类型，desc.</description>
+    </item>
+    
+    <item>
+      <title>一致性与共识</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/consistency/</link>
+      <pubDate>Fri, 25 Feb 2022 08:51:32 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/consistency/</guid>
+      <description>一致性保证 #  可线性化 #  顺序保证 #  分布式事务与 共识 #  </description>
     </item>
     
     <item>
@@ -149,27 +308,28 @@ Recall = True Postive / (True Positives + False Negtives)</description>
     </item>
     
     <item>
-      <title>索引</title>
-      <link>https://wxyyrain.github.io/docs/mysql/mds/0_index/</link>
-      <pubDate>Thu, 27 Jan 2022 08:58:27 +0800</pubDate>
+      <title>基础数据结构</title>
+      <link>https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/</link>
+      <pubDate>Mon, 31 Jan 2022 15:47:28 +0800</pubDate>
       
-      <guid>https://wxyyrain.github.io/docs/mysql/mds/0_index/</guid>
-      <description>索引的类型 #   索引的出现是为了提高数据查询的效率，就像书的目录一样。实现索引的方式也有很多种，MySQL有如下几种类型的索引。
- 哈希索引 #   哈希索引是基于哈希表这种数据结构的索引。
-   优点
- 新增、精确查询都很快，O(1)的时间复杂度。
-   缺点
-  无法用于排序和分组； 区间查询很慢。     适用场景：等值查询
-  全文索引 #   MyISAM存储引擎支持全文索引，用于查找文本中的关键词，而不是直接比较是否相等。 查找条件使用MATCH AGAINST，而不是普通的WHERE。
-全文索引使用倒排索引实现，它记录着关键词到其所在文档的映射。
-InnoDB存储引擎在MySQL 5.6.4 版本中也开始支持全文索引。
- B+树索引 #  不同数据结构的出现，主要是为了解决不同场景，不同操作的效率问题。B+树是适合存在磁盘的数据结构，它有以下特点：
-  B+树的每个节点都是一页；
- 从磁盘读取数据的时候，并不是一条一条读的，而是读“一块”（好几条）数据到内存。在MySQL中，这“一块”的单位就是页，默认大小为16k。
-   B+树是N叉树，N取决于字段的大小和页的大小；
- 假设一棵二叉树高度为5，目标值在树的底部，那么在进行深度优先搜索过程中，就需要经过5个节点。对于存储在磁盘的B+树来说，经过5个节点就意味着要查询5次磁盘，是比较耗时的操作。如果这棵树的高度低一些，就意味着可以少进行几次查询磁盘的操作。
-  同样一棵树，每个节点的子节点（扇出）越多，那么它的树高也越低。所以B+树是N叉树的结构，是更适合磁盘的数据结构。
-  以整数（bigint）字段索引为例，一个key为8B，一个引用约为6B，所以一条数据的索引占据空间约为14B，一页可以存：16K/14B ≈ 1170 条数据的索引，也就是说，此时N = 1170，是1170叉树。</description>
+      <guid>https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/</guid>
+      <description>数组 #   数组是一种线性表数据结构。它用一组连续的内存空间，来存储一组具有相同类型的数据。
+ 特点 #    线性表
+ 线性表就是数据排列像一条线一样的数据结构，每个线性表上的数据最多只有前和后两个方向。
+  链表、队列、栈等也是线性表结构。
+  二叉树、堆、图等，是非线性表，因为数据之间并不是简单的前后关系。
+   连续的内存空间和相同的数据类型
+ 这两个限制，使数组有了随机访问的特性，计算机可以使用以下寻址公式，随机访问数组中的某个元素：
+ a[i]_address = base_address + i * data_type_size  base_address 为数组的起始地址，data_type_size是每个元素占用的内存的大小，i是元素的索引。
+   低效的插入和删除
+ 为了保证数组的连续性，在进行插入、删除操作的时候，需要做大量的数据迁移工作，因此效率会低一些。
+   插入
+ 假设数组的长度为 n，如果需要将一个数据插入到数组中的第 k 个位置。为了把第 k 个位置腾出来，给新来的数据，需要将第 k～n 这部分的元素都顺序地往后挪一位。
+如果数据插在末尾，这时的时间复杂度为 O(1)。
+但如果在数组的开头插入元素，那所有的数据都需要依次往后移动一位，所以最坏时间复杂度是 O(n)。平均情况时间复杂度为 (1+2+…n)/n=O(n)。
+   删除
+ 跟插入数据类似，如果要删除第 k 个位置的数据，为了内存的连续性，也需要搬移数据，不然中间就会出现空洞，内存就不连续了。
+   优化</description>
     </item>
     
   </channel>

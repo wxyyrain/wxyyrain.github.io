@@ -1,0 +1,865 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="全局锁 #  对整个数据库加读锁：
+Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处于只读状态，其它线程以下这些操作会被阻塞：
+ 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。   使用场景； 全库逻辑备份，也就是对整个库select出来成文本。 使用风险；   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表&#43;1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
+  官方自带逻辑备份工具：mysqldump；   当mysqldump使用参数-single-transaction的时候，导数据之前会启动一个事务，确保拿到一致性视图。由于MVCC的支持，这个过程是可以更新的。
+  有的存储引擎（比如MyIsAM）不支持事务，没有一致性读，这个时候就只能使用FTWRL了。
+  只读配置：set global readonly=true。  全库只读还可以通过这个配置来实现，但一般我们不使用，原因如下：
+ 异常处理机制的差异：执行FTWRL命令发生异常后，会自动释放全局锁，数据库会回到可更新的状态；如果是使用set global readonly=true的方式，发生异常后数据库仍然处于只读状态； 有些系统中，readonly 的值会被用来做其他逻辑，比如用来判断一个库是主库还是备库。  表级锁 #  表锁 #  表锁的语法：
+## 加锁 lock tables … read/write ## 主动解锁 unlock tables 在客户端断开连接时，会主动释放锁。 loack tables除了限定别的线程的读写外，也限定了本线程接下来的操作对象：">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="锁" />
+<meta property="og:description" content="全局锁 #  对整个数据库加读锁：
+Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处于只读状态，其它线程以下这些操作会被阻塞：
+ 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。   使用场景； 全库逻辑备份，也就是对整个库select出来成文本。 使用风险；   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表&#43;1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
+  官方自带逻辑备份工具：mysqldump；   当mysqldump使用参数-single-transaction的时候，导数据之前会启动一个事务，确保拿到一致性视图。由于MVCC的支持，这个过程是可以更新的。
+  有的存储引擎（比如MyIsAM）不支持事务，没有一致性读，这个时候就只能使用FTWRL了。
+  只读配置：set global readonly=true。  全库只读还可以通过这个配置来实现，但一般我们不使用，原因如下：
+ 异常处理机制的差异：执行FTWRL命令发生异常后，会自动释放全局锁，数据库会回到可更新的状态；如果是使用set global readonly=true的方式，发生异常后数据库仍然处于只读状态； 有些系统中，readonly 的值会被用来做其他逻辑，比如用来判断一个库是主库还是备库。  表级锁 #  表锁 #  表锁的语法：
+## 加锁 lock tables … read/write ## 主动解锁 unlock tables 在客户端断开连接时，会主动释放锁。 loack tables除了限定别的线程的读写外，也限定了本线程接下来的操作对象：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/mysql/mds/lock/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-01-28T15:30:52+08:00" />
+<meta property="article:modified_time" content="2022-01-28T15:30:52+08:00" />
+
+<title>锁 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">基础数据结构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class=" active">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>锁</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#全局锁">全局锁</a></li>
+    <li><a href="#表级锁">表级锁</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#行锁">行锁</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#加锁的思考">加锁的思考</a></li>
+    <li><a href="#加锁规则">加锁规则</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="全局锁">
+  全局锁
+  <a class="anchor" href="#%e5%85%a8%e5%b1%80%e9%94%81">#</a>
+</h2>
+<p>对整个数据库加读锁：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"> Flush tables <span style="color:#66d9ef">with</span> <span style="color:#66d9ef">read</span> <span style="color:#66d9ef">lock</span> (FTWRL)
+</code></pre></div><p>使用这个命令之后，数据库会处于只读状态，其它线程以下这些操作会被阻塞：</p>
+<ol>
+<li>数据更新语句（数据的增删改查）；</li>
+<li>数据定义语句（包括建表、修改表结构等）；</li>
+<li>更新类事务的提交语句。</li>
+</ol>
+<ul>
+<li>使用场景；
+全库逻辑备份，也就是对整个库select出来成文本。</li>
+<li>使用风险；</li>
+</ul>
+<ol>
+<li>如果在主库使用，期间都无法更新，业务都要停摆；</li>
+<li>如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。</li>
+</ol>
+<ul>
+<li>备份数据时加锁的必要性；
+不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。</li>
+</ul>
+<blockquote>
+<p>比如在极客时间买课的场景，有课程表和余额表。
+假设逻辑是先扣减余额，再增加课程。
+备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表+1。
+这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。</p>
+</blockquote>
+<ul>
+<li>官方自带逻辑备份工具：mysqldump；</li>
+</ul>
+<blockquote>
+<p>当mysqldump使用参数-single-transaction的时候，导数据之前会启动一个事务，确保拿到一致性视图。由于MVCC的支持，这个过程是可以更新的。</p>
+</blockquote>
+<blockquote>
+<p>有的存储引擎（比如MyIsAM）不支持事务，没有一致性读，这个时候就只能使用FTWRL了。</p>
+</blockquote>
+<ul>
+<li>只读配置：set global readonly=true。</li>
+</ul>
+<p>全库只读还可以通过这个配置来实现，但一般我们不使用，原因如下：</p>
+<ol>
+<li>异常处理机制的差异：执行FTWRL命令发生异常后，会自动释放全局锁，数据库会回到可更新的状态；如果是使用set global readonly=true的方式，发生异常后数据库仍然处于只读状态；</li>
+<li>有些系统中，readonly 的值会被用来做其他逻辑，比如用来判断一个库是主库还是备库。</li>
+</ol>
+<h2 id="表级锁">
+  表级锁
+  <a class="anchor" href="#%e8%a1%a8%e7%ba%a7%e9%94%81">#</a>
+</h2>
+<h4 id="表锁">
+  表锁
+  <a class="anchor" href="#%e8%a1%a8%e9%94%81">#</a>
+</h4>
+<p>表锁的语法：</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#f92672">##</span> <span style="color:#960050;background-color:#1e0010">加锁</span>
+<span style="color:#66d9ef">lock</span> tables <span style="color:#960050;background-color:#1e0010">…</span> <span style="color:#66d9ef">read</span><span style="color:#f92672">/</span><span style="color:#66d9ef">write</span>
+<span style="color:#f92672">##</span> <span style="color:#960050;background-color:#1e0010">主动解锁</span>
+unlock tables
+</code></pre></div><p>在客户端断开连接时，会主动释放锁。
+loack tables除了限定别的线程的读写外，也限定了本线程接下来的操作对象：</p>
+<ol>
+<li>如果某个线程A执行lock tables t1 read, t2 write;这个语句，则其他线程写t1，读写t2的操作都会被阻塞；</li>
+<li>线程A在执行unlock tables之前，也只能执行读t1，读写t2的操作。连写t1都不允许，自然也不能访问其他表。</li>
+</ol>
+<blockquote>
+<p>没有出现更细粒度的锁的时候，表锁是最常用处理并发的方式。</p>
+</blockquote>
+<h4 id="元数据锁meta-data-lockmdl">
+  元数据锁（meta data lock，MDL）
+  <a class="anchor" href="#%e5%85%83%e6%95%b0%e6%8d%ae%e9%94%81meta-data-lockmdl">#</a>
+</h4>
+<p>MDL不需要显示使用，在访问一个表的时候会被自动加上。</p>
+<ul>
+<li>MDL的作用；
+保证读写的正确性。</li>
+</ul>
+<blockquote>
+<p>比如，如果一个查询正在遍历一个表中的数据，而执行期间另一个线程对这个表结构做变更，删了一列，那么查询线程拿到的结果跟表结构对不上，肯定是不行的。</p>
+</blockquote>
+<p>在MySQL 5.5版本引入了MDL，当对一个表做增删改查的时候，加MDL读锁；对表结构做变更操作的时候，要加MDL写锁：</p>
+<ol>
+<li>读锁之前不互斥，因此多个线程可以对同一张表增删改查；</li>
+<li>读写锁之间、写锁之间是互斥的，保证变更表结构的操作是安全的。如果有两个线程同时给一张表加字段，其中一个要等到另一个执行完才能开始执行。</li>
+</ol>
+<ul>
+<li>
+<p>MDL可能引发的问题；</p>
+<p><img src="/images/mysql/mdl.png" alt="" /></p>
+</li>
+</ul>
+<p>图上分别为会话A、B、C、D。
+A、B执行的时候，加了MDL读锁；C执行的时候，加了MDL写锁；到了D执行的时候，需要加MDL读锁，但是C已经加了MDL写锁，MDL读写锁是互斥的，所以会话D会被阻塞。这个时候如果查询频繁的话，数据库的线程会很快爆满。</p>
+<blockquote>
+<p>事务中的MDL锁，在语句开始执行时申请，但是语句结束不会马上释放，而会等到整个事务提交后再释放。</p>
+</blockquote>
+<ul>
+<li>安全地给小表加字段。</li>
+</ul>
+<p>其实可以看出来，如果上面的会话A、B很快就结束了，也不会导致后面的问题。所以根本原因是长事务导致。解决长事务：</p>
+<ol>
+<li>在 MySQL 的 information_schema 库的 innodb_trx 表中，可以查到当前执行的事务。如果要做DDL的表恰好有长事务在执行，考虑暂停DDL，或者kill掉长事务；</li>
+<li>如果有这样的场景：需要执行DDL的表是一个热点表，数据量不大，但请求频繁，而又不得不加一个字段：这种时候kill可能未必好使，因为新的请求马上就来了。比较理想的机制是在alter table语句设定等待时间，如果能在等待时间内拿到MDL写锁最好，拿不到也不要阻塞后面的业务语句，先放弃。之后重复这个过程。</li>
+</ol>
+<blockquote>
+<p>MriaDB已经合并了AliSQL的这个功能，所以这两个开源分支目前都支持DDL NOWAIT/WAIT n这个语法。</p>
+</blockquote>
+<h2 id="行锁">
+  行锁
+  <a class="anchor" href="#%e8%a1%8c%e9%94%81">#</a>
+</h2>
+<ul>
+<li>
+<p>两阶段锁；
+在InnoDB事务中，行锁是需要的时候才加上的，但并不是不需要了就立刻释放，而是要等到事务结束的时候才释放。</p>
+</li>
+<li>
+<p>如何更好地使用；
+如果事务中需要锁多个行，把最可能造成锁冲突、最可能影响并发的锁尽量往后放。</p>
+</li>
+<li>
+<p>死锁；</p>
+<p><img src="/images/mysql/dead_lock.png" alt="" /></p>
+</li>
+<li>
+<p>出现死锁后的解决策略：</p>
+</li>
+</ul>
+<ol>
+<li>直接进入等待，知道超时。这个超时时间可以通过参数innodb_lock_wait_timeout来设置；</li>
+</ol>
+<blockquote>
+<p>innodb_lock_wait_timeout默认值是50s，意味着如果出现死锁，第一个被锁住的线程要过50s才会超时退出，然后其他线程才能继续执行。50s对于一般的服务来说都太久了，无法接受。</p>
+</blockquote>
+<p>对于参数innodb_lock_wait_timeout的设置比较难把控，太大的话业务无法接受；太小的话，在正常的锁等待场景下会造成误伤。所以使用下面的策略更合适。</p>
+<ol start="2">
+<li>发起死锁检测，发现死锁后，主动回滚死锁链条中的某一个事务，让其他事务得以继续执行。通过参数innodb_deadlock_detect设置，on表示开启。</li>
+</ol>
+<blockquote>
+<p>死锁检测会造成额外负担：每当一个事务被锁的时候，就要看看它所依赖的线程有没有被别人锁住，如此循环，最后判断是否出现了循环等待，也就是死锁。</p>
+</blockquote>
+<blockquote>
+<p>比如：新来的线程F，被锁了之后要检查锁住F的线程（假设为D）是否被锁，如果没有被锁，则没有造成死锁，如果被锁了，那要继续看锁住D的是谁，如果是F，那么肯定死锁了，如果不是F（假设是B），那么又要判断锁住B的是谁，一直走直到发现线程没有被锁或被F锁住才会终止。</p>
+</blockquote>
+<ul>
+<li>所有事务都更新同一行的场景。</li>
+</ul>
+<blockquote>
+<p>每个新来的被堵住的线程，都要判断会不会由于自己的加入导致了死锁，这是一个时间复杂度为O(n)的操作。假设有1000个并发线程要同时更新同一行，那么死锁检测操作是100万这个量级（1000个线程，每个都要判断其他999个线程）。虽然最终检测没有死锁，但是检测过程中会消耗大量CPU资源。导致CPU利用率很高，但是每秒执行不了几个事务。</p>
+</blockquote>
+<p>解决：</p>
+<ol>
+<li>如果确保业务不会出现死锁，可以临时把死锁检测关掉；
+有检测的时候会回滚，业务重试后就没问题了，是业务无损的；关掉之后可能出现大量的超时，对业务是有损额。</li>
+<li>控制并发度。
+最好不在客户端实现，因为客户端可能有很多；
+可以考虑中间件；
+可以考虑修改MySQL源码，对于相同行的更新，在进入引擎之前排队；
+从设计上优化：将一行的逻辑改成多行来减少锁冲突。</li>
+</ol>
+<blockquote>
+<p>比如影院的余额可以设计为10条记录。但是在其他方面要考虑周全，比如算余额是10条记录的总和；扣减余额时要考虑一条是0的情况。</p>
+</blockquote>
+<h4 id="间隙锁">
+  间隙锁
+  <a class="anchor" href="#%e9%97%b4%e9%9a%99%e9%94%81">#</a>
+</h4>
+<blockquote>
+<p>间隙锁的出现，主要是为了解决幻读。</p>
+</blockquote>
+<h5 id="幻读">
+  幻读
+  <a class="anchor" href="#%e5%b9%bb%e8%af%bb">#</a>
+</h5>
+<p>幻读是指，一个失误在前后两次查询同一个范围时，后一次查询看到了前一次查询没有看到的行。</p>
+<ol>
+<li>在可重复读隔离界级别下，普通的查询时快照读，是不会看到别的事务插入的数据的。因此幻读在 当前读 下才会出现；</li>
+<li>幻读仅专指 新插入的行。</li>
+</ol>
+<h5 id="加锁时只对一行加锁">
+  加锁时只对一行加锁
+  <a class="anchor" href="#%e5%8a%a0%e9%94%81%e6%97%b6%e5%8f%aa%e5%af%b9%e4%b8%80%e8%a1%8c%e5%8a%a0%e9%94%81">#</a>
+</h5>
+<ol>
+<li>对加锁语义的破坏；
+比如，select * from t where c = 5 for update，假设这条数据的id = 1；如果在另一个事务中我先把id = 0的数据，c字段更新为5，再对id = 0的这条数据，更新其他字段，就破坏了c = 5数据加锁的语义。</li>
+<li>数据不一致；
+比如，select * from t where c = 5 for update；我在另一个事务中，插入了一条c = 5的数据，但是这个执行插入的事务早提交，第一个事务在在第二个事务提交后，又执行了对c字段更新的语句，会导致binlog有问题。</li>
+<li>幻读问题。</li>
+</ol>
+<h5 id="间隙锁-1">
+  间隙锁
+  <a class="anchor" href="#%e9%97%b4%e9%9a%99%e9%94%81-1">#</a>
+</h5>
+<p><img src="/images/mysql/gap_lock.png" alt="" /></p>
+<p>间隙锁，锁的就是两个值之间的空隙。
+当你执行 select * from t where c=5 for update 的时候，就不止是给数据库中已有的 6 个记录加上了行锁，还同时加了 7 个间隙锁。这样就确保了无法再插入新的记录。</p>
+<ul>
+<li>
+<p>间隙锁之间不存在冲突关系；
+跟间隙锁存在冲突关系的，是“往这个间隙中插入一个记录”这个操作。</p>
+</li>
+<li>
+<p>间隙锁导致的死锁。</p>
+<p><img src="/images/mysql/gap_dead_lock.png" alt="" /></p>
+</li>
+</ul>
+<h5 id="不使用间隙锁">
+  不使用间隙锁
+  <a class="anchor" href="#%e4%b8%8d%e4%bd%bf%e7%94%a8%e9%97%b4%e9%9a%99%e9%94%81">#</a>
+</h5>
+<p>RC隔离级别 + row格式binlog</p>
+<h2 id="加锁的思考">
+  加锁的思考
+  <a class="anchor" href="#%e5%8a%a0%e9%94%81%e7%9a%84%e6%80%9d%e8%80%83">#</a>
+</h2>
+<p>加锁其实是锁索引，在此基础上思考。</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#66d9ef">select</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">from</span> t <span style="color:#66d9ef">where</span> <span style="color:#66d9ef">c</span> <span style="color:#f92672">=</span> <span style="color:#ae81ff">5</span> <span style="color:#66d9ef">for</span> <span style="color:#66d9ef">update</span>
+</code></pre></div><ol>
+<li>字段c有索引，且有c=5这条记录；
+RR：会有临键锁，也就是锁5周围的间隙以及5这条记录；如果是唯一索引，只会锁5这条记录。</li>
+</ol>
+<blockquote>
+<p>普通索引，为了保证没有5这条记录再插入，所以要看住5周围不能有数据插入，比如5的前面是3，要锁住(3, 5]这个范围，因为这个范围内，都可能再插入新的c=5的记录；如果是唯一索引，只锁行就可以了，因为唯一的限制，不可能再出现c=5的新纪录。</p>
+</blockquote>
+<ol start="2">
+<li>字段c有索引，且没有c=5这条记录；
+RR：会有间隙锁。</li>
+</ol>
+<blockquote>
+<p>普通索引，为了保证没有5这条记录再插入，所以要看住5周围不能有数据插入，比如5的前面是3，后面是7，要锁住的范围就是(3, 7)，因为这个范围内，都可能再插入新的c=5的记录；唯一索引仍然只会锁一行。</p>
+</blockquote>
+<ol start="3">
+<li>字段c没有索引，且有c=5这条记录；
+RR：锁全表。</li>
+</ol>
+<blockquote>
+<p>没有索引，意味着可能会在主键树的任意位置，所以要锁全表。</p>
+</blockquote>
+<ol start="4">
+<li>字段c没有索引，且没有c=5这条记录；</li>
+</ol>
+<blockquote>
+<p>不会加锁。</p>
+</blockquote>
+<h2 id="加锁规则">
+  加锁规则
+  <a class="anchor" href="#%e5%8a%a0%e9%94%81%e8%a7%84%e5%88%99">#</a>
+</h2>
+<ol>
+<li>原则1：加锁的基本单位是next-key lock；</li>
+<li>原则2：查找过程中访问到的对象才会加锁；</li>
+<li>优化1：索引上的等值查询，给唯一索引加锁时，next-key lock会退化为行锁；</li>
+<li>优化2：索引上的等值查询，向右遍历且最后一个值不满足等值条件时，next-key lock退化为间隙锁；</li>
+<li>唯一索引上的范围查找，会访问到不满足条件的第一个值为止。</li>
+</ol>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#全局锁">全局锁</a></li>
+    <li><a href="#表级锁">表级锁</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#行锁">行锁</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#加锁的思考">加锁的思考</a></li>
+    <li><a href="#加锁规则">加锁规则</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

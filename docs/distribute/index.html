@@ -3,19 +3,39 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="">
+<meta name="description" content="出于以下目的需要在多台机器上分布数据：
+  扩展性
+ 当数据量或者读写负载巨大，严重超出了单台机器的处理上限，需要将负载分散到多台机器。
+   容错与高可用性
+ 当单台机器（或者多台，以及网络甚至整个数据中心）出现故障，还希望应用系统可以继续工作，这时需要采用多台机器提供冗余。这样某些组件失效之后，冗余组件可以迅速接管。
+   延迟考虑
+ 如果客户遍布世界各地，通常需要考虑在全球范围内部署服务，以方便用户就近访问最近数据中心所提供的服务，从而避免数据请求跨越了半个地球才能到达目标。
+   系统扩展能力 #    共享内存架构
+ 当负载增加需要更强的处理能力时，最简单的办法就是购买更强大的机器（有时称为垂直扩展）。由一个操作系统管理更多的CPU、内存和磁盘，通过高速内部总线使每个CPU都可以访问所有的存储器或磁盘。在这样一个共享内存架构中，所有这些组件的集合可看做一台大机器。
+  此架构问题在于：成本增长过快甚至超过了线性，即如果把一台机器内的CPU数量增加一倍，内存扩容一倍，磁盘容量加大一倍，则最终总成本增加不止一倍。并且由于性能瓶颈因素，这样的一台机器尽管拥有了两倍的硬件指标但却不一定能处理两倍的负载。
+  共享内存架构能够提供有限的容错能力，例如高端的服务器可以热插拔很多组件（在不关闭机器的情况下更换磁盘，内存模块，甚至是CPU）。但是很显然，它仍局限于某个特定的地理位置，无法提供异地容错能力。
+   共享磁盘架构
+ 共享磁盘架构拥有多台服务器，每个服务器各自拥有独立的CPU和内存，然后将数据存储在可共享访问的磁盘列阵上，服务器与磁盘列阵之间往往通过高速网络连接。
+  这种架构多适用于数据仓库等负载，然而通常由于资源竞争以及锁的开销等限制了其进一步的扩展能力。
+   无共享结构 #   运行数据库软件的机器或者虚拟机称为节点。每个节点独立使用本地的CPU，内存和磁盘。节点之间所有协调通信等任务全部运行在传统网络（以太网）之上且核心逻辑主要依靠软件来实现。
+  无共享系统不需要专门的硬件，具有较高的性价比。它可以跨过多个物理区域分发数据，从而减少用户的访问延迟，甚至当整个数据中心发生灾难时仍能继续工作。通过云计算虚拟机的部署方式，可以轻松拥有跨区域的分布式架构和服务能力。
+  虽然分布式无共享体系架构具有很多优点，但也会给应用程序带来更多的复杂性，有时甚至会限制实际可用的数据模型。
+ 复制与分区 #  将数据分布在多节点时有两种常见的方式：
+  复制
+ 在多个节点上保存相同数据的副本，每个副本具体的存储位置可能不尽相同。复制方法可以提供冗余：如果某些节点发生不可用，则可以通过其他节点继续提供数据访问服务。复制也可以帮助提高系统性能。
+   分区">
 <meta name="theme-color" content="#FFFFFF">
-<meta name="color-scheme" content="light dark"><meta property="og:title" content="" />
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="分布式数据系统" />
 <meta property="og:description" content="" />
 <meta property="og:type" content="website" />
 <meta property="og:url" content="https://wxyyrain.github.io/docs/distribute/" />
 
-<title>Distribute | My New Hugo Site</title>
+<title>分布式数据系统 | My New Hugo Site</title>
 <link rel="manifest" href="/manifest.json">
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.66f77fe6d3d527a8b25a956c6f38abbc8b2fc882f63bc32f784bafc5f05a15b0.js" integrity="sha256-Zvd/5tPVJ6iyWpVsbzirvIsvyIL2O8MveEuvxfBaFbA=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
 <link rel="alternate" type="application/rss+xml" href="https://wxyyrain.github.io/docs/distribute/index.xml" title="My New Hugo Site" />
 <!--
 Made with Book Theme
@@ -60,6 +80,120 @@ https://github.com/alex-shpak/hugo-book
 
   
   <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class=" active">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">基础数据结构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
     
       
         <li>
@@ -203,7 +337,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <span>MySQL</span>
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
   
 
           
@@ -216,13 +350,8 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/0_index/" class="">索引</a>
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
   
-
-        </li>
-      
-    
-  </ul>
 
         </li>
       
@@ -234,11 +363,37 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <span>Distribute</span>
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
   
 
+        </li>
+      
+    
+      
+        <li>
           
-  <ul>
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
     
   </ul>
 
@@ -335,7 +490,7 @@ https://github.com/alex-shpak/hugo-book
     <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
   </label>
 
-  <strong>Distribute</strong>
+  <strong>分布式数据系统</strong>
 
   <label for="toc-control">
     
@@ -349,7 +504,15 @@ https://github.com/alex-shpak/hugo-book
   <aside class="hidden clearfix">
     
   
-<nav id="TableOfContents"></nav>
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#系统扩展能力">系统扩展能力</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
 
 
 
@@ -360,7 +523,88 @@ https://github.com/alex-shpak/hugo-book
 
       
       
-  <article class="markdown"></article>
+  <article class="markdown"><p>出于以下目的需要在多台机器上分布数据：</p>
+<ul>
+<li>
+<p>扩展性</p>
+<blockquote>
+<p>当数据量或者读写负载巨大，严重超出了单台机器的处理上限，需要将负载分散到多台机器。</p>
+</blockquote>
+</li>
+<li>
+<p>容错与高可用性</p>
+<blockquote>
+<p>当单台机器（或者多台，以及网络甚至整个数据中心）出现故障，还希望应用系统可以继续工作，这时需要采用多台机器提供冗余。这样某些组件失效之后，冗余组件可以迅速接管。</p>
+</blockquote>
+</li>
+<li>
+<p>延迟考虑</p>
+<blockquote>
+<p>如果客户遍布世界各地，通常需要考虑在全球范围内部署服务，以方便用户就近访问最近数据中心所提供的服务，从而避免数据请求跨越了半个地球才能到达目标。</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="系统扩展能力">
+  系统扩展能力
+  <a class="anchor" href="#%e7%b3%bb%e7%bb%9f%e6%89%a9%e5%b1%95%e8%83%bd%e5%8a%9b">#</a>
+</h2>
+<ul>
+<li>
+<p>共享内存架构</p>
+<blockquote>
+<p>当负载增加需要更强的处理能力时，最简单的办法就是购买更强大的机器（有时称为垂直扩展）。由一个操作系统管理更多的CPU、内存和磁盘，通过高速内部总线使每个CPU都可以访问所有的存储器或磁盘。在这样一个共享内存架构中，所有这些组件的集合可看做一台大机器。</p>
+</blockquote>
+<blockquote>
+<p>此架构问题在于：成本增长过快甚至超过了线性，即如果把一台机器内的CPU数量增加一倍，内存扩容一倍，磁盘容量加大一倍，则最终总成本增加不止一倍。并且由于性能瓶颈因素，这样的一台机器尽管拥有了两倍的硬件指标但却不一定能处理两倍的负载。</p>
+</blockquote>
+<blockquote>
+<p>共享内存架构能够提供有限的容错能力，例如高端的服务器可以热插拔很多组件（在不关闭机器的情况下更换磁盘，内存模块，甚至是CPU）。但是很显然，它仍局限于某个特定的地理位置，无法提供异地容错能力。</p>
+</blockquote>
+</li>
+<li>
+<p>共享磁盘架构</p>
+<blockquote>
+<p>共享磁盘架构拥有多台服务器，每个服务器各自拥有独立的CPU和内存，然后将数据存储在可共享访问的磁盘列阵上，服务器与磁盘列阵之间往往通过高速网络连接。</p>
+</blockquote>
+<blockquote>
+<p>这种架构多适用于数据仓库等负载，然而通常由于资源竞争以及锁的开销等限制了其进一步的扩展能力。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="无共享结构">
+  无共享结构
+  <a class="anchor" href="#%e6%97%a0%e5%85%b1%e4%ba%ab%e7%bb%93%e6%9e%84">#</a>
+</h4>
+<blockquote>
+<p>运行数据库软件的机器或者虚拟机称为节点。每个节点独立使用本地的CPU，内存和磁盘。节点之间所有协调通信等任务全部运行在传统网络（以太网）之上且核心逻辑主要依靠软件来实现。</p>
+</blockquote>
+<blockquote>
+<p>无共享系统不需要专门的硬件，具有较高的性价比。它可以跨过多个物理区域分发数据，从而减少用户的访问延迟，甚至当整个数据中心发生灾难时仍能继续工作。通过云计算虚拟机的部署方式，可以轻松拥有跨区域的分布式架构和服务能力。</p>
+</blockquote>
+<blockquote>
+<p>虽然分布式无共享体系架构具有很多优点，但也会给应用程序带来更多的复杂性，有时甚至会限制实际可用的数据模型。</p>
+</blockquote>
+<h4 id="复制与分区">
+  复制与分区
+  <a class="anchor" href="#%e5%a4%8d%e5%88%b6%e4%b8%8e%e5%88%86%e5%8c%ba">#</a>
+</h4>
+<p>将数据分布在多节点时有两种常见的方式：</p>
+<ul>
+<li>
+<p>复制</p>
+<blockquote>
+<p>在多个节点上保存相同数据的副本，每个副本具体的存储位置可能不尽相同。复制方法可以提供冗余：如果某些节点发生不可用，则可以通过其他节点继续提供数据访问服务。复制也可以帮助提高系统性能。</p>
+</blockquote>
+</li>
+<li>
+<p>分区</p>
+<blockquote>
+<p>将一个大块头数据库拆分成多个较小的子集即分区，不同的分区分配给不同的节点（也成为分片）。</p>
+</blockquote>
+</li>
+</ul>
+<p>这些是不同的数据分布机制，然而它们经常被放到一起组合使用。</p>
+</article>
  
       
 
@@ -385,6 +629,10 @@ https://github.com/alex-shpak/hugo-book
 
       
   
+  <div class="book-comments">
+
+</div>
+  
  
 
       <label for="menu-control" class="hidden book-menu-overlay"></label>
@@ -395,7 +643,15 @@ https://github.com/alex-shpak/hugo-book
       <div class="book-toc-content">
         
   
-<nav id="TableOfContents"></nav>
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#系统扩展能力">系统扩展能力</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
 
 
  

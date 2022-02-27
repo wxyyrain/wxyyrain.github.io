@@ -1,0 +1,743 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="数组 #   数组是一种线性表数据结构。它用一组连续的内存空间，来存储一组具有相同类型的数据。
+ 特点 #    线性表
+ 线性表就是数据排列像一条线一样的数据结构，每个线性表上的数据最多只有前和后两个方向。
+  链表、队列、栈等也是线性表结构。
+  二叉树、堆、图等，是非线性表，因为数据之间并不是简单的前后关系。
+   连续的内存空间和相同的数据类型
+ 这两个限制，使数组有了随机访问的特性，计算机可以使用以下寻址公式，随机访问数组中的某个元素：
+ a[i]_address = base_address &#43; i * data_type_size  base_address 为数组的起始地址，data_type_size是每个元素占用的内存的大小，i是元素的索引。
+   低效的插入和删除
+ 为了保证数组的连续性，在进行插入、删除操作的时候，需要做大量的数据迁移工作，因此效率会低一些。
+   插入
+ 假设数组的长度为 n，如果需要将一个数据插入到数组中的第 k 个位置。为了把第 k 个位置腾出来，给新来的数据，需要将第 k～n 这部分的元素都顺序地往后挪一位。
+如果数据插在末尾，这时的时间复杂度为 O(1)。
+但如果在数组的开头插入元素，那所有的数据都需要依次往后移动一位，所以最坏时间复杂度是 O(n)。平均情况时间复杂度为 (1&#43;2&#43;…n)/n=O(n)。
+   删除
+ 跟插入数据类似，如果要删除第 k 个位置的数据，为了内存的连续性，也需要搬移数据，不然中间就会出现空洞，内存就不连续了。
+   优化">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="基础数据结构" />
+<meta property="og:description" content="数组 #   数组是一种线性表数据结构。它用一组连续的内存空间，来存储一组具有相同类型的数据。
+ 特点 #    线性表
+ 线性表就是数据排列像一条线一样的数据结构，每个线性表上的数据最多只有前和后两个方向。
+  链表、队列、栈等也是线性表结构。
+  二叉树、堆、图等，是非线性表，因为数据之间并不是简单的前后关系。
+   连续的内存空间和相同的数据类型
+ 这两个限制，使数组有了随机访问的特性，计算机可以使用以下寻址公式，随机访问数组中的某个元素：
+ a[i]_address = base_address &#43; i * data_type_size  base_address 为数组的起始地址，data_type_size是每个元素占用的内存的大小，i是元素的索引。
+   低效的插入和删除
+ 为了保证数组的连续性，在进行插入、删除操作的时候，需要做大量的数据迁移工作，因此效率会低一些。
+   插入
+ 假设数组的长度为 n，如果需要将一个数据插入到数组中的第 k 个位置。为了把第 k 个位置腾出来，给新来的数据，需要将第 k～n 这部分的元素都顺序地往后挪一位。
+如果数据插在末尾，这时的时间复杂度为 O(1)。
+但如果在数组的开头插入元素，那所有的数据都需要依次往后移动一位，所以最坏时间复杂度是 O(n)。平均情况时间复杂度为 (1&#43;2&#43;…n)/n=O(n)。
+   删除
+ 跟插入数据类似，如果要删除第 k 个位置的数据，为了内存的连续性，也需要搬移数据，不然中间就会出现空洞，内存就不连续了。
+   优化" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-01-31T15:47:28+08:00" />
+<meta property="article:modified_time" content="2022-01-31T15:47:28+08:00" />
+
+<title>基础数据结构 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class=" active">基础数据结构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>基础数据结构</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#数组">数组</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#链表">链表</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="数组">
+  数组
+  <a class="anchor" href="#%e6%95%b0%e7%bb%84">#</a>
+</h2>
+<blockquote>
+<p>数组是一种线性表数据结构。它用一组连续的内存空间，来存储一组具有相同类型的数据。</p>
+</blockquote>
+<h4 id="特点">
+  特点
+  <a class="anchor" href="#%e7%89%b9%e7%82%b9">#</a>
+</h4>
+<ul>
+<li>
+<p>线性表</p>
+<blockquote>
+<p>线性表就是数据排列像一条线一样的数据结构，每个线性表上的数据最多只有前和后两个方向。</p>
+</blockquote>
+<blockquote>
+<p>链表、队列、栈等也是线性表结构。</p>
+</blockquote>
+<blockquote>
+<p>二叉树、堆、图等，是非线性表，因为数据之间并不是简单的前后关系。</p>
+</blockquote>
+</li>
+<li>
+<p>连续的内存空间和相同的数据类型</p>
+<blockquote>
+<p>这两个限制，使数组有了随机访问的特性，计算机可以使用以下寻址公式，随机访问数组中的某个元素：</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-shell" data-lang="shell">a<span style="color:#f92672">[</span>i<span style="color:#f92672">]</span>_address <span style="color:#f92672">=</span> base_address + i * data_type_size
+</code></pre></div><blockquote>
+<p><code>base_address</code> 为数组的起始地址，<code>data_type_size</code>是每个元素占用的内存的大小，<code>i</code>是元素的索引。</p>
+</blockquote>
+</li>
+<li>
+<p>低效的插入和删除</p>
+<blockquote>
+<p>为了保证数组的连续性，在进行插入、删除操作的时候，需要做大量的数据迁移工作，因此效率会低一些。</p>
+</blockquote>
+<ul>
+<li>
+<p>插入</p>
+<blockquote>
+<p>假设数组的长度为 n，如果需要将一个数据插入到数组中的第 k 个位置。为了把第 k 个位置腾出来，给新来的数据，需要将第 k～n 这部分的元素都顺序地往后挪一位。</p>
+<p>如果数据插在末尾，这时的时间复杂度为 O(1)。</p>
+<p>但如果在数组的开头插入元素，那所有的数据都需要依次往后移动一位，所以最坏时间复杂度是 O(n)。平均情况时间复杂度为 (1+2+…n)/n=O(n)。</p>
+</blockquote>
+</li>
+<li>
+<p>删除</p>
+<blockquote>
+<p>跟插入数据类似，如果要删除第 k 个位置的数据，为了内存的连续性，也需要搬移数据，不然中间就会出现空洞，内存就不连续了。</p>
+</blockquote>
+</li>
+<li>
+<p>优化</p>
+<blockquote>
+<p>插入：如果数组中的元素，是没有任何规律的，数组只是被当作一个存储数据的集合，这种情况下，可以直接将第 k 位的数据搬移到数组元素的最后，把新的元素直接放入第 k 个位置。</p>
+</blockquote>
+<blockquote>
+<p>删除：可以先记录下已经删除的数据。每次的删除操作并不是真正地搬移数据，只是记录数据已经被删除。当数组没有更多空间存储数据时，我们再触发执行一次真正的删除操作(这也是标记清除算法思想)。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="时间复杂度">
+  时间复杂度
+  <a class="anchor" href="#%e6%97%b6%e9%97%b4%e5%a4%8d%e6%9d%82%e5%ba%a6">#</a>
+</h4>
+<ul>
+<li>随机查找：O(1)</li>
+<li>插入：最好：O(1)，最坏：O(N)，平均O(N)</li>
+<li>删除：最好：O(1)，最坏：O(N)，平均O(N)</li>
+</ul>
+<h4 id="容器arraylist">
+  容器ArrayList
+  <a class="anchor" href="#%e5%ae%b9%e5%99%a8arraylist">#</a>
+</h4>
+<blockquote>
+<p>Java语言中的容器，<code>java.util.ArrayList</code>，底层的数据结构就是数组。封装了操作的细节，并且支持动态扩容，使用起来更加方便。</p>
+<p>需要注意一点的是，如果能够预知数据的数量，最好提前定义容器的大小，因为扩容操作涉及内存申请和数据搬移，是比较耗时的。</p>
+</blockquote>
+<blockquote>
+<p>尽管ArrayList用起来很方便，但是数组也并非没有用武之地：
+1.数组无法存储基本类型数据，而装箱拆箱也会有一定的性能消耗，特别关注性能，选择数组；
+2.某些使用多维数据结构的情况下，使用数组看起来更直观，<code>Object[][] array</code>与<code>ArrayList&lt;ArrayList&lt;object&gt; &gt; array</code>。</p>
+</blockquote>
+<h4 id="leetcode练习题">
+  Leetcode练习题
+  <a class="anchor" href="#leetcode%e7%bb%83%e4%b9%a0%e9%a2%98">#</a>
+</h4>
+<table>
+<thead>
+<tr>
+<th>题目</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/two-sum/">两数之和</a></td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/container-with-most-water/">盛水最多的容器</a></td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/move-zeroes/">移动零</a></td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/climbing-stairs/">爬楼梯</a></td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/3sum/">三数之和</a></td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/remove-duplicates-from-sorted-array/">删除排序数组中的重复项</a></td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/rotate-array/">旋转数组</a></td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/merge-sorted-array/">合并两个有序数组</a></td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/plus-one/">加一</a></td>
+</tr>
+</tbody>
+</table>
+<h2 id="链表">
+  链表
+  <a class="anchor" href="#%e9%93%be%e8%a1%a8">#</a>
+</h2>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#数组">数组</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#链表">链表</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

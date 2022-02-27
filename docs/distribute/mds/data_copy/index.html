@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="复制主要指通过互联网络在多台机器上保存相同数据的副本。通过数据复制方案，通常希望达到以下目的：
+  使数据在地理位置上更接近用户，从而降低访问延迟； 当部分组件出现故障，系统依然可以继续工作，从而提高可用性； 扩展至多台机器以同时提供数据访问服务，从而提高读吞吐量。   复制的数据并非一成不变，一般采用主从复制、多主节点复制和无主节点复制三种方案，处理那些持续更改的数据。
+ 主节点与从节点 #  主从复制原理：
+ 指定一个副本为主副本（或称为主节点）。当客户写数据库时，必须将写请求发送给主副本，主副本首先将新数据写入本地存储； 其他副本则全部称为从副本（或称为从节点）。主副本把新数据写入本地存储后，然后将数据更改作为复制的日志或更改流发送给所有从副本。每个从副本获得更改日志之后将其应用到本地，且严格保持与祝副本相同的写入顺序； 客户端从数据库中读数据时，可以在主副本或者从副本上执行查询。  同步/异步复制 #    同步
+ 同步复制主节点需要等待直到从节点确认完成了写入 。
+  优点：主从数据一致（万一主节点发生故障，可以在从节点访问最新数据）； 缺点：从节点无法完成确认的话（例如从节点崩溃或网络原因），写入不能视为成功。主节点会阻塞其后所有写操作，直到同步副本确认完成。    异步
+ 异步复制主节点发送消息后立即返回不用等待从节点确认 。
+  优点：从节点落后不会影响主节点响应写请求，系统吞吐性能更好； 缺点：数据不同步；如果主节点失败且不可恢复，所有尚未复制到从节点的写请求将丢失。   异步复制被广泛使用。场景：节点数据巨大；分布于广域地理环境。
+   半同步
+ 半同步，一个从节点同步，其他异步。
+  优点：至少两个节点拥有最新的数据副本。    链式同步
+  配置新的从节点 #   某个时间点对主节点的数据副本产生一个一致性快照 ； 将此快照拷贝到新的从节点 ； 从节点连接主节点请求快照点之后的的数据变更日志 ； 从节点处理快照点之后的数据变更，称为 追赶。  处理节点失效 #    从节点失效：追赶式恢复">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="数据复制" />
+<meta property="og:description" content="复制主要指通过互联网络在多台机器上保存相同数据的副本。通过数据复制方案，通常希望达到以下目的：
+  使数据在地理位置上更接近用户，从而降低访问延迟； 当部分组件出现故障，系统依然可以继续工作，从而提高可用性； 扩展至多台机器以同时提供数据访问服务，从而提高读吞吐量。   复制的数据并非一成不变，一般采用主从复制、多主节点复制和无主节点复制三种方案，处理那些持续更改的数据。
+ 主节点与从节点 #  主从复制原理：
+ 指定一个副本为主副本（或称为主节点）。当客户写数据库时，必须将写请求发送给主副本，主副本首先将新数据写入本地存储； 其他副本则全部称为从副本（或称为从节点）。主副本把新数据写入本地存储后，然后将数据更改作为复制的日志或更改流发送给所有从副本。每个从副本获得更改日志之后将其应用到本地，且严格保持与祝副本相同的写入顺序； 客户端从数据库中读数据时，可以在主副本或者从副本上执行查询。  同步/异步复制 #    同步
+ 同步复制主节点需要等待直到从节点确认完成了写入 。
+  优点：主从数据一致（万一主节点发生故障，可以在从节点访问最新数据）； 缺点：从节点无法完成确认的话（例如从节点崩溃或网络原因），写入不能视为成功。主节点会阻塞其后所有写操作，直到同步副本确认完成。    异步
+ 异步复制主节点发送消息后立即返回不用等待从节点确认 。
+  优点：从节点落后不会影响主节点响应写请求，系统吞吐性能更好； 缺点：数据不同步；如果主节点失败且不可恢复，所有尚未复制到从节点的写请求将丢失。   异步复制被广泛使用。场景：节点数据巨大；分布于广域地理环境。
+   半同步
+ 半同步，一个从节点同步，其他异步。
+  优点：至少两个节点拥有最新的数据副本。    链式同步
+  配置新的从节点 #   某个时间点对主节点的数据副本产生一个一致性快照 ； 将此快照拷贝到新的从节点 ； 从节点连接主节点请求快照点之后的的数据变更日志 ； 从节点处理快照点之后的数据变更，称为 追赶。  处理节点失效 #    从节点失效：追赶式恢复" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" /><meta property="article:section" content="docs" />
+
+
+
+<title>数据复制 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class=" active">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">基础数据结构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>数据复制</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#主节点与从节点">主节点与从节点</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#复制滞后问题">复制滞后问题</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#多主节点复制">多主节点复制</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#无主节点复制">无主节点复制</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><blockquote>
+<p>复制主要指通过互联网络在多台机器上保存相同数据的副本。通过数据复制方案，通常希望达到以下目的：</p>
+</blockquote>
+<ul>
+<li>使数据在地理位置上更接近用户，从而降低访问延迟；</li>
+<li>当部分组件出现故障，系统依然可以继续工作，从而提高可用性；</li>
+<li>扩展至多台机器以同时提供数据访问服务，从而提高读吞吐量。</li>
+</ul>
+<blockquote>
+<p>复制的数据并非一成不变，一般采用主从复制、多主节点复制和无主节点复制三种方案，处理那些持续更改的数据。</p>
+</blockquote>
+<h2 id="主节点与从节点">
+  主节点与从节点
+  <a class="anchor" href="#%e4%b8%bb%e8%8a%82%e7%82%b9%e4%b8%8e%e4%bb%8e%e8%8a%82%e7%82%b9">#</a>
+</h2>
+<p>主从复制原理：</p>
+<ol>
+<li>指定一个副本为主副本（或称为主节点）。当客户写数据库时，必须将写请求发送给主副本，主副本首先将新数据写入本地存储；</li>
+<li>其他副本则全部称为从副本（或称为从节点）。主副本把新数据写入本地存储后，然后将数据更改作为复制的日志或更改流发送给所有从副本。每个从副本获得更改日志之后将其应用到本地，且严格保持与祝副本相同的写入顺序；</li>
+<li>客户端从数据库中读数据时，可以在主副本或者从副本上执行查询。</li>
+</ol>
+<h4 id="同步异步复制">
+  同步/异步复制
+  <a class="anchor" href="#%e5%90%8c%e6%ad%a5%e5%bc%82%e6%ad%a5%e5%a4%8d%e5%88%b6">#</a>
+</h4>
+<ul>
+<li>
+<p>同步</p>
+<blockquote>
+<p>同步复制主节点需要等待直到从节点确认完成了写入 。</p>
+</blockquote>
+<ul>
+<li>优点：主从数据一致（万一主节点发生故障，可以在从节点访问最新数据）；</li>
+<li>缺点：从节点无法完成确认的话（例如从节点崩溃或网络原因），写入不能视为成功。主节点会阻塞其后所有写操作，直到同步副本确认完成。</li>
+</ul>
+</li>
+<li>
+<p>异步</p>
+<blockquote>
+<p>异步复制主节点发送消息后立即返回不用等待从节点确认 。</p>
+</blockquote>
+<ul>
+<li>优点：从节点落后不会影响主节点响应写请求，系统吞吐性能更好；</li>
+<li>缺点：数据不同步；如果主节点失败且不可恢复，所有尚未复制到从节点的写请求将丢失。</li>
+</ul>
+<blockquote>
+<p>异步复制被广泛使用。场景：节点数据巨大；分布于广域地理环境。</p>
+</blockquote>
+</li>
+<li>
+<p>半同步</p>
+<blockquote>
+<p>半同步，一个从节点同步，其他异步。</p>
+</blockquote>
+<ul>
+<li>优点：至少两个节点拥有最新的数据副本。</li>
+</ul>
+</li>
+<li>
+<p>链式同步</p>
+</li>
+</ul>
+<h4 id="配置新的从节点">
+  配置新的从节点
+  <a class="anchor" href="#%e9%85%8d%e7%bd%ae%e6%96%b0%e7%9a%84%e4%bb%8e%e8%8a%82%e7%82%b9">#</a>
+</h4>
+<ol>
+<li>某个时间点对主节点的数据副本产生一个一致性快照 ；</li>
+<li>将此快照拷贝到新的从节点 ；</li>
+<li>从节点连接主节点请求快照点之后的的数据变更日志 ；</li>
+<li>从节点处理快照点之后的数据变更，称为 追赶。</li>
+</ol>
+<h4 id="处理节点失效">
+  处理节点失效
+  <a class="anchor" href="#%e5%a4%84%e7%90%86%e8%8a%82%e7%82%b9%e5%a4%b1%e6%95%88">#</a>
+</h4>
+<ul>
+<li>
+<p>从节点失效：追赶式恢复</p>
+<blockquote>
+<ol>
+<li>根据复制日志，从节点知道发生故障前最后一笔事务 ；</li>
+<li>之后连接到主节点，从那之后追赶。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>主节点失效：节点切换</p>
+<blockquote>
+<ol>
+<li>某个从节点提升为主节点；</li>
+<li>客户端更新 ；</li>
+<li>其他从节点接受新的主节点。</li>
+</ol>
+</blockquote>
+<ul>
+<li>
+<p>节点自动切换步骤</p>
+<blockquote>
+<ol>
+<li>确认主节点失效（超时机制） ;</li>
+<li>选举新的主节点（共识问题）;</li>
+<li>重新配置系统使主节点生效（请求路由）。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>节点自动切换变数</p>
+<blockquote>
+<ol>
+<li>异步复制，主从数据不同步；选举之后，原主上线且未意识到角色变化，同步其他从节点，但其中一个现在是新主，造成写冲突。解决：原主未完成的写请求丢弃；</li>
+<li>丢弃更新可能比较危险；</li>
+<li>脑裂；</li>
+<li>设置合适超时时间。</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>考虑节点失效、网络不可靠、副本一致性、持久性、可用性与延迟之间的权衡。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="复制日志的实现">
+  复制日志的实现
+  <a class="anchor" href="#%e5%a4%8d%e5%88%b6%e6%97%a5%e5%bf%97%e7%9a%84%e5%ae%9e%e7%8e%b0">#</a>
+</h4>
+<ul>
+<li>
+<p>基于语句的复制</p>
+<blockquote>
+<p>优点：简单。但有许多不适用的场景：</p>
+<ol>
+<li>非确定性函数语句：NOW()或RAND()；</li>
+<li>使用自增列或依赖现有数据，副本必须按照相同顺序，对于多个同时并发执行的事务有限制；</li>
+<li>有副作用的语句（.触发器、存储过程、自定义函数）可能在每个副本产生不同副作用。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>基于预写日志(WAL)传输</p>
+</li>
+<li>
+<p>基于行的逻辑日志复制</p>
+<blockquote>
+<ol>
+<li>行插入，日志包含所有相关列的新值 ;</li>
+<li>行删除，日志里有足够的信息来唯一标识已经删除的行 ;</li>
+<li>行更新，日志包含足够信息来唯一标识更新的行，以及所有列的新值。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>基于触发器复制</p>
+<blockquote>
+<p>开销高，容易出错，但是很灵活。</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="复制滞后问题">
+  复制滞后问题
+  <a class="anchor" href="#%e5%a4%8d%e5%88%b6%e6%bb%9e%e5%90%8e%e9%97%ae%e9%a2%98">#</a>
+</h2>
+<h4 id="读自己的写">
+  读自己的写
+  <a class="anchor" href="#%e8%af%bb%e8%87%aa%e5%b7%b1%e7%9a%84%e5%86%99">#</a>
+</h4>
+<ol>
+<li>用户访问可能被修改的内容，从主读；否则在从读 ；</li>
+<li>更新后一分钟内从主读，监控从，不读滞后一分钟的从 ；</li>
+<li>客户端记住更新的时间戳，附带在请求中，系统根据该时间戳保证相应的副本处理 ；</li>
+<li>副本分布在多中心，先把请求路由到主节点所在的数据中心。</li>
+</ol>
+<ul>
+<li>
+<p>跨设备写后读一致性：</p>
+<blockquote>
+<ol>
+<li>元数据必须做到全局共享 ；</li>
+<li>如果副本分布在多数据中心，确保将来自不同设备的请求路由到同一个数据中心。</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+<h4 id="单调读">
+  单调读
+  <a class="anchor" href="#%e5%8d%95%e8%b0%83%e8%af%bb">#</a>
+</h4>
+<blockquote>
+<p>现象：用户看到了最新内容之后又读到了过期的内容，好像时间被回拨。</p>
+</blockquote>
+<blockquote>
+<p>单调读一致性可以确保不会发生这种异常，这是一个比强一致性弱，但比最终一致性强的包中。</p>
+</blockquote>
+<blockquote>
+<p>实现：确保每个用户总是从固定的同一副本执行读取。</p>
+</blockquote>
+<h4 id="前缀一致读">
+  前缀一致读
+  <a class="anchor" href="#%e5%89%8d%e7%bc%80%e4%b8%80%e8%87%b4%e8%af%bb">#</a>
+</h4>
+<blockquote>
+<p>该保证是说，对于一系列按照某个顺序发生的写请求，那么读取这些内容时也会按照当时的写入顺序。</p>
+</blockquote>
+<blockquote>
+<p>解决方案： 确保任何具有因果顺序关系的写入都交给一个分区来完成</p>
+</blockquote>
+<h4 id="复制滞后的解决方案">
+  复制滞后的解决方案
+  <a class="anchor" href="#%e5%a4%8d%e5%88%b6%e6%bb%9e%e5%90%8e%e7%9a%84%e8%a7%a3%e5%86%b3%e6%96%b9%e6%a1%88">#</a>
+</h4>
+<ol>
+<li>应用层可以提供比底层数据库更强有力的保证 ；</li>
+<li>应用层代码处理变的复杂，容易出错。</li>
+</ol>
+<blockquote>
+<p>事务在分布式数据库性能和可用性代价过高。</p>
+</blockquote>
+<h2 id="多主节点复制">
+  多主节点复制
+  <a class="anchor" href="#%e5%a4%9a%e4%b8%bb%e8%8a%82%e7%82%b9%e5%a4%8d%e5%88%b6">#</a>
+</h2>
+<blockquote>
+<p>主从缺点：主节点网络异常导致无法写入。</p>
+</blockquote>
+<blockquote>
+<p>多主：每个主节点都可以写，同时也扮演其他主节点的从。</p>
+</blockquote>
+<h4 id="适用场景">
+  适用场景
+  <a class="anchor" href="#%e9%80%82%e7%94%a8%e5%9c%ba%e6%99%af">#</a>
+</h4>
+<ul>
+<li>
+<p>多数据中心</p>
+<blockquote>
+<p>每个数据中心，采用主从；数据中心之间，由主和其他数据中心主节点交互。</p>
+</blockquote>
+<ul>
+<li>
+<p>与主从比较</p>
+<blockquote>
+<ol>
+<li>性能：就近访问，异步同步到其他中心 ；</li>
+<li>容忍数据中心失效：每个数据中心独立运行 ；</li>
+<li>容忍网络问题：数据中心内的本地网络更可靠。</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>
+<p>离线客户端操作</p>
+<blockquote>
+<p>应用断开网络后还需要继续工作。</p>
+</blockquote>
+</li>
+<li>
+<p>协作编辑</p>
+</li>
+</ul>
+<h4 id="处理写冲突">
+  处理写冲突
+  <a class="anchor" href="#%e5%a4%84%e7%90%86%e5%86%99%e5%86%b2%e7%aa%81">#</a>
+</h4>
+<ul>
+<li>
+<p>同步与异步冲突检测</p>
+<blockquote>
+<p>同步检测冲突会丧失多主优势，异步检测冲突无法让用户层解决冲突。</p>
+</blockquote>
+</li>
+<li>
+<p>避免冲突</p>
+<blockquote>
+<p>对特定记录的写请求通过同一个节点，但是可能发生数据中心故障问题使该策略失效。</p>
+</blockquote>
+</li>
+<li>
+<p>收敛于一致状态</p>
+<blockquote>
+<ol>
+<li>每个写入分片唯一id（时间戳、随机数、UUID等），id最高的写入作为胜利者，基于时间戳，被称为最后写入者获胜 ；</li>
+<li>每个副本分配唯一id，序号高的副本优先写入 ；</li>
+<li>以某种方式将这些值合并在一起，例如 按字母顺序排序拼接 ；</li>
+<li>利用预定义好的格式记录和保留冲突，依靠应用层逻辑，时候解决。</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>1和2可能造成数据丢失。</p>
+</blockquote>
+</li>
+<li>
+<p>自定义冲突解决逻辑</p>
+<blockquote>
+<ol>
+<li>在写入时执行：数据库系统在复制变更日志时检测到冲突，就会调用应用层的冲突检测程序 ；</li>
+<li>在读取时执行：检测到冲突时，所有冲突写入值会暂时保存下来，下一次读取时，多个版本的数据返回给应用层，提示用户处理。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>什么是冲突</p>
+<blockquote>
+<p>不同主节点预订会议室例子。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="拓扑结构">
+  拓扑结构
+  <a class="anchor" href="#%e6%8b%93%e6%89%91%e7%bb%93%e6%9e%84">#</a>
+</h4>
+<ul>
+<li>
+<p>环形拓扑</p>
+<blockquote>
+<p>写请求通过多个节点才能到全部副本 。</p>
+<ol>
+<li>防止无限循环，每个节点要赋予唯一标识，遇到自己的标识，忽略 ；</li>
+<li>一个节点发生了故障，会影响其他节点之间复制日志的转发，需要重新配置拓扑结构。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>星形拓扑</p>
+<blockquote>
+<p>同环形。</p>
+</blockquote>
+</li>
+<li>
+<p>全部-至-全部拓扑</p>
+<blockquote>
+<ol>
+<li>避免了单点故障，更好的容错性 ；</li>
+<li>可能存在某些网络链路比其他链路更快，导致复制日志之间的覆盖（先插入后更新，但是更新先到了）。</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+<h2 id="无主节点复制">
+  无主节点复制
+  <a class="anchor" href="#%e6%97%a0%e4%b8%bb%e8%8a%82%e7%82%b9%e5%a4%8d%e5%88%b6">#</a>
+</h2>
+<ol>
+<li>写请求发送到多副本 ；</li>
+<li>或者由一个协调者代表客户端进行写入，协调者不负责写入顺序的维护。</li>
+</ol>
+<h4 id="节点失效时写入数据库">
+  节点失效时写入数据库
+  <a class="anchor" href="#%e8%8a%82%e7%82%b9%e5%a4%b1%e6%95%88%e6%97%b6%e5%86%99%e5%85%a5%e6%95%b0%e6%8d%ae%e5%ba%93">#</a>
+</h4>
+<blockquote>
+<p>向三个副本发出写请求，2个成功，1个失败（失效了），如果失败的节点重新上线，可能读到过期数据。</p>
+</blockquote>
+<blockquote>
+<p>解决：读数据时，向多个副本发送请求，多个值使用版本号。</p>
+</blockquote>
+<ul>
+<li>
+<p>读修复与反熵：失效节点上线后，赶上错过的写请求</p>
+<ul>
+<li>
+<p>读修复</p>
+<blockquote>
+<ol>
+<li>读的过程检测到过期值，并修复 ；</li>
+<li>适合频繁读取的场景。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>反熵</p>
+<blockquote>
+<ol>
+<li>后台进程不断查找副本间的差异 ；</li>
+<li>不保证以特定顺序复制写入，并且会引入明显滞后。</li>
+</ol>
+</blockquote>
+</li>
+</ul>
+</li>
+<li>
+<p>读quorum：n个副本几个成功才算写入成功</p>
+<blockquote>
+<p>仲裁读/写：n个副本，写入需要w个节点确认，读取必须至少查r个节点，只要w + r &gt; n，读取节点一定有新值。</p>
+</blockquote>
+<blockquote>
+<p>n、w、r通常可配置。常见设置n为奇数，w = r = （n + 1） /  2。读多写少可配置w = n，r = 1。</p>
+</blockquote>
+<ol>
+<li>当 w &lt; n，如果一个节点不可用，仍然可以处理写入 ；</li>
+<li>当 r &lt; n，如果一个节点不可用，仍可以读取 ；</li>
+<li>假定 n = 3，w = 2， r = 2，则可以容忍一个不可用的节点 ；</li>
+<li>假定 n = 5， w = 3， r = 3，则可以容忍两个不可用节点 ；</li>
+<li>通常，读取和写入操作会发送到所有副本，w 和 r 决定要等待的节点数。</li>
+</ol>
+</li>
+</ul>
+<h4 id="quorum-一致性的局限性">
+  Quorum 一致性的局限性
+  <a class="anchor" href="#quorum-%e4%b8%80%e8%87%b4%e6%80%a7%e7%9a%84%e5%b1%80%e9%99%90%e6%80%a7">#</a>
+</h4>
+<blockquote>
+<p>可能返回旧值。</p>
+</blockquote>
+<ol>
+<li>sloppy quorum ；</li>
+<li>如果两个写操作同时发生，无法明确先后顺序（唯一安全解决方案：合并并发写入，时间戳会受时钟偏差影响） ；</li>
+<li>写操作和读操作同时发生，写操作在一部分副本完成，读返回旧值还是新值不确定 ；</li>
+<li>总的写入成功少于w，没法回滚 5.新值节点失效，恢复数据来自旧值，总的新值副本会低于w。</li>
+</ol>
+<ul>
+<li>
+<p>监控旧值</p>
+<blockquote>
+<ol>
+<li>主从比较容易，对比偏移量的值；</li>
+<li>无主比较难，没有固定写入顺序。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>宽松的quorum与数据回传</p>
+<blockquote>
+<p>放松的仲裁：无法达到w或r所要求的quorum，暂时写入一些可以访问的节点（这些节点不在n中），网络恢复后，临时节点把写请求发送到原始主节点。</p>
+</blockquote>
+<blockquote>
+<p>比如没带钥匙，去邻居家休息。</p>
+</blockquote>
+</li>
+<li>
+<p>多数据中心操作</p>
+<blockquote>
+<p>不同数据库，n的定义不同，可能是所有数据中心的节点，也可能是一个数据中心的节点数。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="检测并发写">
+  检测并发写
+  <a class="anchor" href="#%e6%a3%80%e6%b5%8b%e5%b9%b6%e5%8f%91%e5%86%99">#</a>
+</h4>
+<blockquote>
+<p>网络原因，请求在不同节点呈现不同顺序。</p>
+</blockquote>
+<ul>
+<li>
+<p>最终写入者获胜</p>
+<blockquote>
+<p>丢弃并发写入：每个副班总是保存最新值，允许覆盖并丢弃旧值。</p>
+</blockquote>
+<blockquote>
+<p>选择最大的时间戳，LWW，可能被覆盖写；</p>
+<p>保证安全：只写入一次且写入值视为不可变。 每个写操作都有唯一主键。</p>
+</blockquote>
+</li>
+<li>
+<p>Happens-before关系和并发</p>
+<blockquote>
+<p>两个操作A/B：</p>
+<ol>
+<li>A在B之前</li>
+<li>B在A之前</li>
+<li>A、B并发</li>
+</ol>
+</blockquote>
+<blockquote>
+<p>判断两个操作是否并发，不是的话可以覆盖，是的话要解决冲突；</p>
+<p>两个操作不需要意识到对方，可称他们为并发操作。</p>
+</blockquote>
+</li>
+<li>
+<p>确定前后关系</p>
+<blockquote>
+<ol>
+<li>服务器为每个主键维护一个版本号，每当主键新值写入时递增版本号，并将新版本号与写入的值一起保存 ；</li>
+<li>客户端读取主键时返回所有当前值以及新版本号，且要求写之前必须读 ；</li>
+<li>客户端写主键，必须包含之前读到的版本号、读到的值和新值合并后的集合，写请求响应也返回所有当前值 ；</li>
+<li>服务器收到特定版本号的写入，覆盖该版本号或更低版本的所有值，但必须保存更高版本号的所有值。</li>
+</ol>
+</blockquote>
+</li>
+<li>
+<p>合并同时写入的值</p>
+<blockquote>
+<p>墓碑-删除标记。</p>
+</blockquote>
+</li>
+<li>
+<p>版本矢量</p>
+<blockquote>
+<p>多副本，为每个副本每个主键均定义一个版本号。</p>
+</blockquote>
+</li>
+</ul>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#主节点与从节点">主节点与从节点</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#复制滞后问题">复制滞后问题</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#多主节点复制">多主节点复制</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#无主节点复制">无主节点复制</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="使用InnoDB引擎过程中，比较耳熟能详的三种日志：
+ undo log：用于回滚； redo log：崩溃恢复； bin log：备份、主从同步。  WAL技术：Write-Ahead Logging，先写日志，再写磁盘。
+ 如果每一次更新操作都要写入磁盘，查找&#43;写入的IO成本很高，使用WAL技术可以避免。
+ redo log 重做日志 #   InnoDB 引擎就会先把记录写到 redo log里面，并更新内存，这个时候更新就算完成了； 同时，InnoDB 引擎会在适当的时候，将这个操作记录更新到磁盘里面，而这个更新往往是在系统比较空闲的时候做。  redo log的大小是固定的，可以配置为一组四个的文件，每个文件的大小是1GB，那么总共就可以记录4GB的操作。从头开始写，写到末尾就回到开头循环写。
+ write pos：当前记录的位置，一边写一遍后移，写到3号文件末尾就回到0号文件开头； check point：当前要擦除的位置，也是往后推移并且循环的，擦除记录前要把记录更新到数据文件； write pos和check point之间是空白位置，可以用来记录新的操作。如果write pos追上了check point，这时不能再执行更新操作，要先停下来擦除一些记录，把check point 推进一下。   个人理解redo log其实是利用了磁盘的顺序写提高性能；redo log保证了crash-safe，已提交的数据不会丢失。
+ binlog 归档日志 #   归档：同义词为存档，指将处理完并且具有保存价值的事情或文件经系统整理后交档案室（馆）保存备案(备查)的过程。
+ 与 redo log 的不同 #   redo log是InnoDB引擎特有的；bin log是MySQLServer层实现的，所有引擎都可以使用； redo log是物理日志，记录的是“在某个数据页上做了什么修改”；binlog是逻辑日志，记录的是这个语句的原始逻辑； redo log是循环写的，空间固定会被用完；binlog是可以追加写入的。追加写”是指 binlog 文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。  为什么有两份日志 #  最开始MySQL的设计是用binlog作为归档用途，且MySQL刚开始是没有crash-safe能力的。后面出现了InnoDB引擎，通过redo log实现了crash-safe。">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="日志" />
+<meta property="og:description" content="使用InnoDB引擎过程中，比较耳熟能详的三种日志：
+ undo log：用于回滚； redo log：崩溃恢复； bin log：备份、主从同步。  WAL技术：Write-Ahead Logging，先写日志，再写磁盘。
+ 如果每一次更新操作都要写入磁盘，查找&#43;写入的IO成本很高，使用WAL技术可以避免。
+ redo log 重做日志 #   InnoDB 引擎就会先把记录写到 redo log里面，并更新内存，这个时候更新就算完成了； 同时，InnoDB 引擎会在适当的时候，将这个操作记录更新到磁盘里面，而这个更新往往是在系统比较空闲的时候做。  redo log的大小是固定的，可以配置为一组四个的文件，每个文件的大小是1GB，那么总共就可以记录4GB的操作。从头开始写，写到末尾就回到开头循环写。
+ write pos：当前记录的位置，一边写一遍后移，写到3号文件末尾就回到0号文件开头； check point：当前要擦除的位置，也是往后推移并且循环的，擦除记录前要把记录更新到数据文件； write pos和check point之间是空白位置，可以用来记录新的操作。如果write pos追上了check point，这时不能再执行更新操作，要先停下来擦除一些记录，把check point 推进一下。   个人理解redo log其实是利用了磁盘的顺序写提高性能；redo log保证了crash-safe，已提交的数据不会丢失。
+ binlog 归档日志 #   归档：同义词为存档，指将处理完并且具有保存价值的事情或文件经系统整理后交档案室（馆）保存备案(备查)的过程。
+ 与 redo log 的不同 #   redo log是InnoDB引擎特有的；bin log是MySQLServer层实现的，所有引擎都可以使用； redo log是物理日志，记录的是“在某个数据页上做了什么修改”；binlog是逻辑日志，记录的是这个语句的原始逻辑； redo log是循环写的，空间固定会被用完；binlog是可以追加写入的。追加写”是指 binlog 文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。  为什么有两份日志 #  最开始MySQL的设计是用binlog作为归档用途，且MySQL刚开始是没有crash-safe能力的。后面出现了InnoDB引擎，通过redo log实现了crash-safe。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/mysql/mds/log/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-02-26T12:10:07+08:00" />
+<meta property="article:modified_time" content="2022-02-26T12:10:07+08:00" />
+
+<title>日志 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">基础数据结构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class=" active">日志</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>日志</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#redo-log-重做日志">redo log 重做日志</a></li>
+    <li><a href="#binlog-归档日志">binlog 归档日志</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#undo-log">undo log</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><p>使用InnoDB引擎过程中，比较耳熟能详的三种日志：</p>
+<ol>
+<li>undo log：用于回滚；</li>
+<li>redo log：崩溃恢复；</li>
+<li>bin log：备份、主从同步。</li>
+</ol>
+<p>WAL技术：Write-Ahead Logging，先写日志，再写磁盘。</p>
+<blockquote>
+<p>如果每一次更新操作都要写入磁盘，查找+写入的IO成本很高，使用WAL技术可以避免。</p>
+</blockquote>
+<h2 id="redo-log-重做日志">
+  redo log 重做日志
+  <a class="anchor" href="#redo-log-%e9%87%8d%e5%81%9a%e6%97%a5%e5%bf%97">#</a>
+</h2>
+<ol>
+<li>InnoDB 引擎就会先把记录写到 redo log里面，并更新内存，这个时候更新就算完成了；</li>
+<li>同时，InnoDB 引擎会在适当的时候，将这个操作记录更新到磁盘里面，而这个更新往往是在系统比较空闲的时候做。</li>
+</ol>
+<p><img src="/images/mysql/redo_log.png" alt="" /></p>
+<p>redo log的大小是固定的，可以配置为一组四个的文件，每个文件的大小是1GB，那么总共就可以记录4GB的操作。从头开始写，写到末尾就回到开头循环写。</p>
+<ul>
+<li>write pos：当前记录的位置，一边写一遍后移，写到3号文件末尾就回到0号文件开头；</li>
+<li>check point：当前要擦除的位置，也是往后推移并且循环的，擦除记录前要把记录更新到数据文件；</li>
+<li>write pos和check point之间是空白位置，可以用来记录新的操作。如果write pos追上了check point，这时不能再执行更新操作，要先停下来擦除一些记录，把check point 推进一下。</li>
+</ul>
+<blockquote>
+<p>个人理解redo log其实是利用了磁盘的顺序写提高性能；redo log保证了crash-safe，已提交的数据不会丢失。</p>
+</blockquote>
+<h2 id="binlog-归档日志">
+  binlog 归档日志
+  <a class="anchor" href="#binlog-%e5%bd%92%e6%a1%a3%e6%97%a5%e5%bf%97">#</a>
+</h2>
+<blockquote>
+<p>归档：同义词为存档，指将处理完并且具有保存价值的事情或文件经系统整理后交档案室（馆）保存备案(备查)的过程。</p>
+</blockquote>
+<h4 id="与-redo-log-的不同">
+  与 redo log 的不同
+  <a class="anchor" href="#%e4%b8%8e-redo-log-%e7%9a%84%e4%b8%8d%e5%90%8c">#</a>
+</h4>
+<ol>
+<li>redo log是InnoDB引擎特有的；bin log是MySQLServer层实现的，所有引擎都可以使用；</li>
+<li>redo log是物理日志，记录的是“在某个数据页上做了什么修改”；binlog是逻辑日志，记录的是这个语句的原始逻辑；</li>
+<li>redo log是循环写的，空间固定会被用完；binlog是可以追加写入的。追加写”是指 binlog 文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。</li>
+</ol>
+<h4 id="为什么有两份日志">
+  为什么有两份日志
+  <a class="anchor" href="#%e4%b8%ba%e4%bb%80%e4%b9%88%e6%9c%89%e4%b8%a4%e4%bb%bd%e6%97%a5%e5%bf%97">#</a>
+</h4>
+<p>最开始MySQL的设计是用binlog作为归档用途，且MySQL刚开始是没有crash-safe能力的。后面出现了InnoDB引擎，通过redo log实现了crash-safe。</p>
+<h4 id="三种格式">
+  三种格式
+  <a class="anchor" href="#%e4%b8%89%e7%a7%8d%e6%a0%bc%e5%bc%8f">#</a>
+</h4>
+<ul>
+<li>
+<p>statement;</p>
+<blockquote>
+<p>binlog记录的是SQL语句原文。
+在从库执行同样的SQL语句时，可能由于使用不同的索引，导致语句执行的效果不同，造成主从不一致。</p>
+</blockquote>
+</li>
+<li>
+<p>row;</p>
+<blockquote>
+<p>binlog记录的是真实行的数据。
+不会有主备不一致问题，但是占用空间可能比较大。</p>
+</blockquote>
+</li>
+<li>
+<p>mixed。</p>
+<blockquote>
+<p>statement和row的混合。</p>
+</blockquote>
+</li>
+</ul>
+<blockquote>
+<p>最好使用row格式，尽管可能会比较占用内存，但是比较利于恢复数据。恢复数据时，最好使用mysqlbinlog工具接续出来，然后把解析的结果发给MySQL执行。</p>
+</blockquote>
+<h4 id="更新时两种日志的写入">
+  更新时两种日志的写入
+  <a class="anchor" href="#%e6%9b%b4%e6%96%b0%e6%97%b6%e4%b8%a4%e7%a7%8d%e6%97%a5%e5%bf%97%e7%9a%84%e5%86%99%e5%85%a5">#</a>
+</h4>
+<p><img src="/images/mysql/update_log.png" alt="" /></p>
+<ol>
+<li>执行器先找引擎取 ID=2 这一行。ID 是主键，引擎直接用树搜索找到这一行。如果 ID=2 这一行所在的数据页本来就在内存中，就直接返回给执行器；否则，需要先从磁盘读入内存，然后再返回。</li>
+<li>执行器拿到引擎给的行数据，把这个值加上 1，比如原来是 N，现在就是 N+1，得到新的一行数据，再调用引擎接口写入这行新数据。</li>
+<li>引擎将这行新数据更新到内存中，同时将这个更新操作记录到 redo log 里面，此时 redo log 处于 prepare 状态。然后告知执行器执行完成了，随时可以提交事务。</li>
+<li>执行器生成这个操作的 binlog，并把 binlog 写入磁盘。</li>
+<li>执行器调用引擎的提交事务接口，引擎把刚刚写入的 redo log 改成提交（commit）状态，更新完成。</li>
+</ol>
+<ul>
+<li>两阶段提交
+是为了让两份日志之间逻辑一致。
+先写redo log，可能导致binlog少一条，恢复临时库时与原库不同；
+先写bin log，redo log少一条，崩溃恢复后没有这条数据，同样导致临时库时与原库不同。</li>
+</ul>
+<h4 id="双1配置">
+  双1配置
+  <a class="anchor" href="#%e5%8f%8c1%e9%85%8d%e7%bd%ae">#</a>
+</h4>
+<ul>
+<li>innodb_flush_log_at_trx_commit
+这个参数设置成 1 的时候，表示每次事务的 redo log 都直接持久化到磁盘。</li>
+<li>sync_binlog
+这个参数设置成 1 的时候，表示每次事务的 binlog 都持久化到磁盘。</li>
+</ul>
+<h2 id="undo-log">
+  undo log
+  <a class="anchor" href="#undo-log">#</a>
+</h2>
+<p>MySQL的MVCC是基于undo log实现的，每次需要查询历史版本的数据，是通过undo log计算出来的。</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#redo-log-重做日志">redo log 重做日志</a></li>
+    <li><a href="#binlog-归档日志">binlog 归档日志</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#undo-log">undo log</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

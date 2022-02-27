@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="分区通常是这样定义的，即每一条数据（或者每条记录，每行或每个文档）只属于某个特定分区。每个分区都可以视为一个完整的小型数据库，虽然数据库可能存在一些跨分区的操作。
+  采用分区的主要目的是提高可扩展性。不同的分区可以放在一个无共享集群的不同节点上。这样一个大数据集可以分散在更多的磁盘上，查询负载也随之分不到更多的处理器上。
+  对单个分区进行查询时，每个节点对自己所在分区可以独立执行查询操作，因此添加更多的节点可以提高查询吞吐量。超大而复杂的查询尽管比较困难，但也可能做到跨节点的并行处理。
+ 数据分区与数据复制 #   分区通常与复制结合使用，即每个分区在多个节点都存有副本。这意味着某条记录属于特定的分区，而同样的内容会保存在不同的节点上以提高系统的容错性。
+ 键-值数据分区 #   分区的主要目标是将数据和查询负载均匀分布在所有节点上。
+   倾斜
+ 而如果分区不均匀，则会出现某些分区节点比其他分区承担更多的数据量或查询负载，称之为倾斜。
+  倾斜会导致分区效率严重下降。在极端情况下，所有负载可能集中在一个分区节点上，这就意味着系统瓶颈在最烦忙的那个节点上。这种负载严重不成比例的分区即成为系统热点。
+   避免热点
+ 避免热点最简单的方法是将记录随机分配给所有的节点上。可以比较均匀的分布数据，但当试图读取特定数据时，不得不并行查询所有节点。
+  改进上述方法，通过关键字来访问记录。
+   基于关键字区间分区 #   为每个分区分配一段连续的关键字或者关键字区间范围（以最小值和最大值来指示）。
+   关键字的区间不一定非要均匀分布，因为数据本身可能就不均匀；
+ 例如，A和B开头的单词，一般比T、U、V、X、Y开头的单词多。如果只是简单的规定每个分区两个字母，可能导致有的分区比其他分区大很多。
+   分区边界可以由管理员手动确定，或者由数据库自动选择；
+  每个分区可以按照关键字排序保存；
+ 这样可以轻松支持区间查询。
+   缺点：某些访问模式可能导致热点。
+ 如果关键字是时间戳，假设每天一个分区，可能导致每天写入数据时候，所有写入操作都集中在一个分区，导致该分区在写入时负载过高，而其他分区空闲。
+   解决">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="数据分区" />
+<meta property="og:description" content="分区通常是这样定义的，即每一条数据（或者每条记录，每行或每个文档）只属于某个特定分区。每个分区都可以视为一个完整的小型数据库，虽然数据库可能存在一些跨分区的操作。
+  采用分区的主要目的是提高可扩展性。不同的分区可以放在一个无共享集群的不同节点上。这样一个大数据集可以分散在更多的磁盘上，查询负载也随之分不到更多的处理器上。
+  对单个分区进行查询时，每个节点对自己所在分区可以独立执行查询操作，因此添加更多的节点可以提高查询吞吐量。超大而复杂的查询尽管比较困难，但也可能做到跨节点的并行处理。
+ 数据分区与数据复制 #   分区通常与复制结合使用，即每个分区在多个节点都存有副本。这意味着某条记录属于特定的分区，而同样的内容会保存在不同的节点上以提高系统的容错性。
+ 键-值数据分区 #   分区的主要目标是将数据和查询负载均匀分布在所有节点上。
+   倾斜
+ 而如果分区不均匀，则会出现某些分区节点比其他分区承担更多的数据量或查询负载，称之为倾斜。
+  倾斜会导致分区效率严重下降。在极端情况下，所有负载可能集中在一个分区节点上，这就意味着系统瓶颈在最烦忙的那个节点上。这种负载严重不成比例的分区即成为系统热点。
+   避免热点
+ 避免热点最简单的方法是将记录随机分配给所有的节点上。可以比较均匀的分布数据，但当试图读取特定数据时，不得不并行查询所有节点。
+  改进上述方法，通过关键字来访问记录。
+   基于关键字区间分区 #   为每个分区分配一段连续的关键字或者关键字区间范围（以最小值和最大值来指示）。
+   关键字的区间不一定非要均匀分布，因为数据本身可能就不均匀；
+ 例如，A和B开头的单词，一般比T、U、V、X、Y开头的单词多。如果只是简单的规定每个分区两个字母，可能导致有的分区比其他分区大很多。
+   分区边界可以由管理员手动确定，或者由数据库自动选择；
+  每个分区可以按照关键字排序保存；
+ 这样可以轻松支持区间查询。
+   缺点：某些访问模式可能导致热点。
+ 如果关键字是时间戳，假设每天一个分区，可能导致每天写入数据时候，所有写入操作都集中在一个分区，导致该分区在写入时负载过高，而其他分区空闲。
+   解决" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-01-31T15:32:20+08:00" />
+<meta property="article:modified_time" content="2022-01-31T15:32:20+08:00" />
+
+<title>数据分区 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class=" active">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">基础数据结构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>数据分区</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#数据分区与数据复制">数据分区与数据复制</a></li>
+    <li><a href="#键-值数据分区">键-值数据分区</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分区与二级索引">分区与二级索引</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分区再平衡">分区再平衡</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#请求路由">请求路由</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><blockquote>
+<p>分区通常是这样定义的，即每一条数据（或者每条记录，每行或每个文档）只属于某个特定分区。每个分区都可以视为一个完整的小型数据库，虽然数据库可能存在一些跨分区的操作。</p>
+</blockquote>
+<blockquote>
+<p>采用分区的主要目的是提高可扩展性。不同的分区可以放在一个无共享集群的不同节点上。这样一个大数据集可以分散在更多的磁盘上，查询负载也随之分不到更多的处理器上。</p>
+</blockquote>
+<blockquote>
+<p>对单个分区进行查询时，每个节点对自己所在分区可以独立执行查询操作，因此添加更多的节点可以提高查询吞吐量。超大而复杂的查询尽管比较困难，但也可能做到跨节点的并行处理。</p>
+</blockquote>
+<h2 id="数据分区与数据复制">
+  数据分区与数据复制
+  <a class="anchor" href="#%e6%95%b0%e6%8d%ae%e5%88%86%e5%8c%ba%e4%b8%8e%e6%95%b0%e6%8d%ae%e5%a4%8d%e5%88%b6">#</a>
+</h2>
+<blockquote>
+<p>分区通常与复制结合使用，即每个分区在多个节点都存有副本。这意味着某条记录属于特定的分区，而同样的内容会保存在不同的节点上以提高系统的容错性。</p>
+</blockquote>
+<p><img src="/images/distribute/data_shard.png" alt="" /></p>
+<h2 id="键-值数据分区">
+  键-值数据分区
+  <a class="anchor" href="#%e9%94%ae-%e5%80%bc%e6%95%b0%e6%8d%ae%e5%88%86%e5%8c%ba">#</a>
+</h2>
+<blockquote>
+<p>分区的主要目标是将数据和查询负载均匀分布在所有节点上。</p>
+</blockquote>
+<ul>
+<li>
+<p>倾斜</p>
+<blockquote>
+<p>而如果分区不均匀，则会出现某些分区节点比其他分区承担更多的数据量或查询负载，称之为倾斜。</p>
+</blockquote>
+<blockquote>
+<p>倾斜会导致分区效率严重下降。在极端情况下，所有负载可能集中在一个分区节点上，这就意味着系统瓶颈在最烦忙的那个节点上。这种负载严重不成比例的分区即成为系统热点。</p>
+</blockquote>
+</li>
+<li>
+<p>避免热点</p>
+<blockquote>
+<p>避免热点最简单的方法是将记录随机分配给所有的节点上。可以比较均匀的分布数据，但当试图读取特定数据时，不得不并行查询所有节点。</p>
+</blockquote>
+<blockquote>
+<p>改进上述方法，通过关键字来访问记录。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="基于关键字区间分区">
+  基于关键字区间分区
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8e%e5%85%b3%e9%94%ae%e5%ad%97%e5%8c%ba%e9%97%b4%e5%88%86%e5%8c%ba">#</a>
+</h4>
+<blockquote>
+<p>为每个分区分配一段连续的关键字或者关键字区间范围（以最小值和最大值来指示）。</p>
+</blockquote>
+<ul>
+<li>
+<p>关键字的区间不一定非要均匀分布，因为数据本身可能就不均匀；</p>
+<blockquote>
+<p>例如，A和B开头的单词，一般比T、U、V、X、Y开头的单词多。如果只是简单的规定每个分区两个字母，可能导致有的分区比其他分区大很多。</p>
+</blockquote>
+</li>
+<li>
+<p>分区边界可以由管理员手动确定，或者由数据库自动选择；</p>
+</li>
+<li>
+<p>每个分区可以按照关键字排序保存；</p>
+<blockquote>
+<p>这样可以轻松支持区间查询。</p>
+</blockquote>
+</li>
+<li>
+<p>缺点：某些访问模式可能导致热点。</p>
+<blockquote>
+<p>如果关键字是时间戳，假设每天一个分区，可能导致每天写入数据时候，所有写入操作都集中在一个分区，导致该分区在写入时负载过高，而其他分区空闲。</p>
+</blockquote>
+<ul>
+<li>
+<p>解决</p>
+<blockquote>
+<p>使用时间戳以外的其他内容作为关键字的第一项。例如，可以在时间戳前面加上名称作为前缀，这样首先由名称，然后按时间进行分区。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="基于关键字哈希值分区">
+  基于关键字哈希值分区
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8e%e5%85%b3%e9%94%ae%e5%ad%97%e5%93%88%e5%b8%8c%e5%80%bc%e5%88%86%e5%8c%ba">#</a>
+</h4>
+<blockquote>
+<p>对于上述数据倾斜和热点问题，许多分布式系统采用了关键字哈希函数的方式来分区。</p>
+</blockquote>
+<ul>
+<li>
+<p>一个好的哈希函数可以处理数据倾斜并使其均匀分布；</p>
+<blockquote>
+<p>即使输入的字符串非常相似，返回的哈希值也会在相应数字范围内均匀分布。</p>
+</blockquote>
+</li>
+<li>
+<p>用于数据分区目的的哈希函数不需要在加密方面很强；</p>
+</li>
+<li>
+<p>为每个分区分配一个哈希范围；</p>
+<blockquote>
+<p>关键字其根据哈希值范围划分到不同的分区。</p>
+<p>分区边界可以是均匀间隔，也可以是伪随机选择（一致性哈希）。</p>
+</blockquote>
+</li>
+<li>
+<p>缺点：丧失了良好的区间查询特性。</p>
+<blockquote>
+<p>丧失了良好的区间查询特性。</p>
+</blockquote>
+<blockquote>
+<p>折中处理：复合主键。第一部分用于哈希分区，其他列可以用于区间查询。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="负载倾斜与热点">
+  负载倾斜与热点
+  <a class="anchor" href="#%e8%b4%9f%e8%bd%bd%e5%80%be%e6%96%9c%e4%b8%8e%e7%83%ad%e7%82%b9">#</a>
+</h4>
+<blockquote>
+<p>基于哈希分区的方法可以减轻热点，但无法做到完全避免。一个极端情况是，所有的读/写操作都是针对同一个关键字，则最终所有请求都被路由到同一个分区。例如社交媒体网站，有数百万粉丝的名人用户发布一些热点事件。</p>
+</blockquote>
+<blockquote>
+<p>通过应用层减轻倾斜程度。例如，如果某个关键字被确认为热点，</p>
+<ul>
+<li>在关键字开头或者结尾添加一个随机数，只需要一个两位数的十进制随机数就可以将该关键字的写请求分配到不同的分区；</li>
+<li>之后的任何读取都要些额外的工作，必须从所有关键字读取数据然后合并；</li>
+<li>此外，还需要额外的元数据来标记哪些关键字进行了特殊处理。</li>
+</ul>
+</blockquote>
+<h2 id="分区与二级索引">
+  分区与二级索引
+  <a class="anchor" href="#%e5%88%86%e5%8c%ba%e4%b8%8e%e4%ba%8c%e7%ba%a7%e7%b4%a2%e5%bc%95">#</a>
+</h2>
+<h4 id="基于文档分区的二级索引">
+  基于文档分区的二级索引
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8e%e6%96%87%e6%a1%a3%e5%88%86%e5%8c%ba%e7%9a%84%e4%ba%8c%e7%ba%a7%e7%b4%a2%e5%bc%95">#</a>
+</h4>
+<p><img src="/images/distribute/index_doc.png" alt="" /></p>
+<blockquote>
+<p>假设color为二级索引，那么每当一辆红色汽车添加到数据库中，数据库分区会自动将其添加到索引条目为&quot;color：red&quot;的文档ID列表中。</p>
+</blockquote>
+<p>在这种索引方法中：</p>
+<ul>
+<li>
+<p>每个分区完全独立，各自维护自己的二级索引，且只负责自己分区内的文档而不关心其他分区中数据；</p>
+</li>
+<li>
+<p>每当需要写数据库时，包括添加、删除或更新文档等，只需要处理包含目标文档ID的那一个分区。 因此文档分区索引也被称为本地索引；</p>
+</li>
+<li>
+<p>读取时需要注意，需要将查询发送到所有的分区，然后合并所有返回的结果；</p>
+</li>
+<li>
+<p>这种查询分区数据库的方法有时也称为分散/聚集， 显然这种二级索引的查询代价高</p>
+<p>昂。 即使采用了并行查询， 也容易导致读延迟显著放大。</p>
+</li>
+</ul>
+<h4 id="基于词条的二级索引分区">
+  基于词条的二级索引分区
+  <a class="anchor" href="#%e5%9f%ba%e4%ba%8e%e8%af%8d%e6%9d%a1%e7%9a%84%e4%ba%8c%e7%ba%a7%e7%b4%a2%e5%bc%95%e5%88%86%e5%8c%ba">#</a>
+</h4>
+<blockquote>
+<p>另一种方法，可以对所有的数据构建全局索引，而不是每个分区维护自己的本地索引。</p>
+<p>而且，为避免成为瓶颈，不能将全局索引存储在一个节点上， 否则就破坏了设计分区均衡的目标。所以，全局索引也必须进行分区，且可以与数据关键字采用不同的分区策略。</p>
+</blockquote>
+<p><img src="/images/distribute/index_term.png" alt="" /></p>
+<blockquote>
+<p>索引本身也是分区的， 例如从a到r开始的颜色放在分区0中， 从s到z的颜色放在分区1中。</p>
+</blockquote>
+<ul>
+<li>
+<p>优点：读取更为高效</p>
+<blockquote>
+<p>不需要采用scatter/gather对所有的分区都执行一遍查询，相反，客户端只需要向包含词条的那一个分区发出读请求。</p>
+</blockquote>
+</li>
+<li>
+<p>缺点：写入速度较慢且非常复杂</p>
+<blockquote>
+<p>单个文档的更新时，里面可能会涉及多个二级索引，而二级索引的分区，又可能完全不同甚至在不同的节点上，由此势必引入显著的写放大。</p>
+</blockquote>
+</li>
+</ul>
+<blockquote>
+<p>理想情况下，引应该时刻保持最新，即写入的数据要立即反映在最新的索引上。但是，对千词条分区来讲，这需要一个跨多个相关分区的分布式事务支持， 写入速度会受到极大的影响，所以现有的数据库都不支持同步更新二级索引。实践中， 对全局二级索引的更新往往都是异步的（也就意味着，如果在写入之后马上去读索引，那么刚刚发生的更新可能还没有反映在索引中）。</p>
+</blockquote>
+<h2 id="分区再平衡">
+  分区再平衡
+  <a class="anchor" href="#%e5%88%86%e5%8c%ba%e5%86%8d%e5%b9%b3%e8%a1%a1">#</a>
+</h2>
+<p>随着时间的推移，数据库可能总会出现某些变化：</p>
+<ul>
+<li>查询压力增加，因此需要更多的CPU来处理负载；</li>
+<li>数据规模增加，因此需要更多的磁盘和内存来存储数据；</li>
+<li>节点可能出现故障，因此需要其它机器来接管失效节点。</li>
+</ul>
+<p>所有这些变化都要求数据和请求可以从一个节点转移到另一个节点。这样一个迁移负载的过程称为再平衡（或者动态平衡）。无论对于哪种分区方案，分区再平衡通常至少满足：</p>
+<ul>
+<li>平衡之后，负载、数据存储、读写请求等应该在集群范围更均匀地分布；</li>
+<li>再平衡执行过程中，数据库应该可以继续正常提供读写服务；</li>
+<li>避免不必要的负载迁移，以加快动态再平衡，并尽量减少网络和磁盘I/O影响。</li>
+</ul>
+<h4 id="动态再平衡的策略">
+  动态再平衡的策略
+  <a class="anchor" href="#%e5%8a%a8%e6%80%81%e5%86%8d%e5%b9%b3%e8%a1%a1%e7%9a%84%e7%ad%96%e7%95%a5">#</a>
+</h4>
+<ul>
+<li>
+<p>不使用取模</p>
+<blockquote>
+<p>使用mod的话，如果节点数N发生了变化，会导致很多关键字需要从现有节点迁移到另一个节点。基本每次节点数变化都需要进行迁移，这种频繁的迁移操作大大增加了再平衡的成本。</p>
+</blockquote>
+</li>
+<li>
+<p>固定数量的分区</p>
+<ul>
+<li>创建远超实际节点数的分区数，然后为每个节点分配多个分区；</li>
+<li>如果集群中添加了一个新节点，该节点可以从每个现有的节点上匀走几个分区，直到分区再次达到全局平衡；</li>
+<li>如果是从集群删除节点，则采取相反的均衡措施。</li>
+</ul>
+<p><img src="/images/distribute/rebalance_0.png" alt="" /></p>
+<blockquote>
+<p>选中的整个分区会在节点之间迁移，但分区的总数量仍维持不变，也不会改变关键字到分区的映射关系。唯一需要调整的是分区与节点的对应关系。</p>
+</blockquote>
+<blockquote>
+<p>考虑到节点间通过网络传输数据总是需要时间，这样调整可以逐步完成，在此期间，旧的分区仍然可以接收读写请求。</p>
+</blockquote>
+</li>
+<li>
+<p>动态分区</p>
+<ul>
+<li>当分区的数据增长超过一个可配的参数阈值(HBase上默认值是10GB) ，它就拆分为两个分区，每个承担一半的数据量；</li>
+<li>相反，如果大最数据被删除，并且分区缩小到某个阈值以下， 则将其与相邻分区进行合并。该过程类似于B树的分裂操作。</li>
+<li>优点：分区数量可以自动适配数据总数。
+<ul>
+<li>如果只有少量的数据，少量的分区就足够了，这样系统开销很小；</li>
+<li>如果有大量的数据， 每个分区的大小则被限制在一个可配的最大值。</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>对于一个空的数据库，因为没有任何先验知识可以帮助确定分区的边界，所以会从一个分区开始。可能数据集很小，但直到达到第一个分裂点之前，所有的写入操作都必须由单个节点来处理，而他节点则处于空闲状态。</p>
+</blockquote>
+<blockquote>
+<p>为了缓解这个问题，HBase和MongoDB允许在一个空的数据库上配置一组初始分区（这被称为预分裂）。对于关键字区间分区，预分裂要求已经知道一些关键字的分布情况。</p>
+</blockquote>
+</li>
+<li>
+<p>按节点比例分区</p>
+<blockquote>
+<p>前两种分区策略，分区的数量与数据集大小成正比关系，与节点数无关。这种策略，使分区数和集群节点数成正比关系。</p>
+</blockquote>
+<ul>
+<li>
+<p>每个节点具有固定数量的分区；</p>
+</li>
+<li>
+<p>当节点数不变时，每个分区的大小与数据集大小保持正比的增长关系；</p>
+</li>
+<li>
+<p>节点数增加时，分区则会调整变小。</p>
+<blockquote>
+<p>较大的数据量通常需要大量的节点来存储，这种方法也使每个分区大小保持稳定。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="自动与手动再平衡操作">
+  自动与手动再平衡操作
+  <a class="anchor" href="#%e8%87%aa%e5%8a%a8%e4%b8%8e%e6%89%8b%e5%8a%a8%e5%86%8d%e5%b9%b3%e8%a1%a1%e6%93%8d%e4%bd%9c">#</a>
+</h4>
+<ul>
+<li>全自动式再平衡很方便，但是可能出现结果难以预测的情况；
+<ul>
+<li>再平衡是个比较昂贵的操作</li>
+<li>节点负载过重可能导致对该节点误判</li>
+</ul>
+</li>
+<li>综合考虑让管理员介入再平衡。</li>
+</ul>
+<h2 id="请求路由">
+  请求路由
+  <a class="anchor" href="#%e8%af%b7%e6%b1%82%e8%b7%af%e7%94%b1">#</a>
+</h2>
+<blockquote>
+<p>请求路由到正确的分区节点。</p>
+</blockquote>
+<p><img src="/images/distribute/route.png" alt="" /></p>
+<ol>
+<li>允许客户端链接任意的节点（例如，采用循环式的负载均衡器）。如果某节点恰好拥有所请求的分区，则直接处理该请求；否则，将请求转发到下一个合适的节点，接收答复， 并将答复返回给客户端；</li>
+<li>将所有客户端的请求都发送到一个路由层，由后者负责将请求转发到对应的分区节点上。路由层本身不处理任何请求，它仅充当一个分区感知的负载均衡器；</li>
+<li>客户端感知分区和节点分配关系。此时，客户端可以直接连接到目标节点，而不需要任何中介。</li>
+</ol>
+<blockquote>
+<p>核心问题：作出路由决策的组件（可能是某个节点，路由层或客户端）如何知道分区与节点的对应关系以及其变 情况？</p>
+</blockquote>
+<ul>
+<li>
+<p>依靠独立的协调服务跟踪集群范围内的元数据</p>
+<p><img src="/images/distribute/zookeeper.png" alt="" /></p>
+</li>
+<li>
+<p>在节点之间使用gossip 协议来同步群集状态的变化</p>
+<blockquote>
+<p>请求可以发送到任何节点，由该节点负责将其转发到目标分区节点。这种方式增了数据库节点 复杂性，但是避免了 ZooKeeper类的外部协调服务的依赖。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="并行查询执行">
+  并行查询执行
+  <a class="anchor" href="#%e5%b9%b6%e8%a1%8c%e6%9f%a5%e8%af%a2%e6%89%a7%e8%a1%8c">#</a>
+</h4>
+<p>对于大规模并行处理（ mass ve parallel proc ss ing, MPP ）这一类主要用于数据分析的关系数据库，在查询类型方面要复杂得多。</p>
+<p>典型的数据仓库 询包含多个联合、过滤、分组和聚合操作。 MPP 询优化器会将复杂的查询分解成许多执行阶段和分区，以便在集群的不同节点上井行执行。尤其是涉及全表扫描这样的 询操作，可以通过并行执行获益颇多。</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#数据分区与数据复制">数据分区与数据复制</a></li>
+    <li><a href="#键-值数据分区">键-值数据分区</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分区与二级索引">分区与二级索引</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#分区再平衡">分区再平衡</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#请求路由">请求路由</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

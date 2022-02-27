@@ -1,0 +1,674 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="隔离性 #  隔离级别 #   读未提交（read uncommitted）； 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题） 读提交（read committed）； 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题） 可重复读（repeatable read）； 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。 串行化（serializable）。 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。  不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
+ 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  MVCC #   read view 实现mvcc用到的一致性视图，即 consistent read view，用于支持RC和RR隔离级别的实现。   RC级别下，每一个SQL语句创建一个read view；RR隔离级别下，在事务一开始创建一个read view并一直使用。
+  事务id InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。   每行数据都有一个隐藏字段row_trx_id，这个字段的值就是transaction id。
+  undo log 每条记录在更新的的同时会记录一条回滚操作（undo log），记录上最新的值，可以通过回滚操作，得到前一个状态的值。同一条记录在系统可以存在多个版本，这就是数据库的多版本并发控制（MVCC）。   回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。
+  可重复读实现   事务数组：InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id； 低水位：数组里面事务id的最小值； 高水位：当前系统里面已经创建过的事务id最大值&#43;1； 一致性视图：由事务数组和高水位组成。  数据版本的可见性，基于数据的row_trx_id和一致性视图对比的结果。对于当前事务启动瞬间来说，一个数据版本的row_trx_id可能有几种情况：">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="事务" />
+<meta property="og:description" content="隔离性 #  隔离级别 #   读未提交（read uncommitted）； 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题） 读提交（read committed）； 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题） 可重复读（repeatable read）； 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。 串行化（serializable）。 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。  不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
+ 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  MVCC #   read view 实现mvcc用到的一致性视图，即 consistent read view，用于支持RC和RR隔离级别的实现。   RC级别下，每一个SQL语句创建一个read view；RR隔离级别下，在事务一开始创建一个read view并一直使用。
+  事务id InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。   每行数据都有一个隐藏字段row_trx_id，这个字段的值就是transaction id。
+  undo log 每条记录在更新的的同时会记录一条回滚操作（undo log），记录上最新的值，可以通过回滚操作，得到前一个状态的值。同一条记录在系统可以存在多个版本，这就是数据库的多版本并发控制（MVCC）。   回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。
+  可重复读实现   事务数组：InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id； 低水位：数组里面事务id的最小值； 高水位：当前系统里面已经创建过的事务id最大值&#43;1； 一致性视图：由事务数组和高水位组成。  数据版本的可见性，基于数据的row_trx_id和一致性视图对比的结果。对于当前事务启动瞬间来说，一个数据版本的row_trx_id可能有几种情况：" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/mysql/mds/transaction/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-02-26T12:11:09+08:00" />
+<meta property="article:modified_time" content="2022-02-26T12:11:09+08:00" />
+
+<title>事务 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">基础数据结构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class=" active">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>事务</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#隔离性">隔离性</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="隔离性">
+  隔离性
+  <a class="anchor" href="#%e9%9a%94%e7%a6%bb%e6%80%a7">#</a>
+</h2>
+<h4 id="隔离级别">
+  隔离级别
+  <a class="anchor" href="#%e9%9a%94%e7%a6%bb%e7%ba%a7%e5%88%ab">#</a>
+</h4>
+<ol>
+<li>读未提交（read uncommitted）；
+一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题）</li>
+<li>读提交（read committed）；
+一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题）</li>
+<li>可重复读（repeatable read）；
+一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。</li>
+<li>串行化（serializable）。
+对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。</li>
+</ol>
+<p>不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：</p>
+<ol>
+<li>可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图；</li>
+<li>读提交，这个视图是在每个SQL语句开始执行的时候创建的；</li>
+<li>读未提交，直接返回记录上最新的值；</li>
+<li>串行化，加锁避免并行访问。</li>
+</ol>
+<h4 id="mvcc">
+  MVCC
+  <a class="anchor" href="#mvcc">#</a>
+</h4>
+<ul>
+<li>read view
+实现mvcc用到的一致性视图，即 consistent read view，用于支持RC和RR隔离级别的实现。</li>
+</ul>
+<blockquote>
+<p>RC级别下，每一个SQL语句创建一个read view；RR隔离级别下，在事务一开始创建一个read view并一直使用。</p>
+</blockquote>
+<ul>
+<li>事务id
+InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。</li>
+</ul>
+<blockquote>
+<p>每行数据都有一个隐藏字段row_trx_id，这个字段的值就是transaction id。</p>
+</blockquote>
+<ul>
+<li>undo log
+每条记录在更新的的同时会记录一条回滚操作（undo log），记录上最新的值，可以通过回滚操作，得到前一个状态的值。同一条记录在系统可以存在多个版本，这就是数据库的多版本并发控制（MVCC）。</li>
+</ul>
+<blockquote>
+<p>回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。</p>
+</blockquote>
+<ul>
+<li>可重复读实现</li>
+</ul>
+<ol>
+<li>事务数组：InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id；</li>
+<li>低水位：数组里面事务id的最小值；</li>
+<li>高水位：当前系统里面已经创建过的事务id最大值+1；</li>
+<li>一致性视图：由事务数组和高水位组成。</li>
+</ol>
+<p>数据版本的可见性，基于数据的row_trx_id和一致性视图对比的结果。对于当前事务启动瞬间来说，一个数据版本的row_trx_id可能有几种情况：</p>
+<ol>
+<li>
+<p>绿色部分：这个版本是已提交的事务或者当前事务自己生成的，这个数据是可见的；</p>
+</li>
+<li>
+<p>红色部分：这个版本的数据是由将来启动的事务生成的，是不可见的；</p>
+</li>
+<li>
+<p>黄色部分：a.如果如果row_trx_id在数组中，表示这个版本是由还没提交的事务生成的，不可见；b.如果row_trx_id不在数组中，表示这个版本是已经提交了的事务生成的，可见。</p>
+<p><img src="/images/mysql/mvcc.png" alt="" /></p>
+<p>总结来说：</p>
+</li>
+<li>
+<p>版本未提交，不可见；</p>
+</li>
+<li>
+<p>版本已提交，但是实在视图创建后提交的，不可见；</p>
+</li>
+<li>
+<p>版本已提交，而且实是在视图创建前提交的，可见。</p>
+</li>
+</ol>
+<ul>
+<li>一致性读和当前读</li>
+</ul>
+<ol>
+<li>一致性读：普通查询都是一致性读，具有可重读的特点；</li>
+<li>当前读：更新数据都是先读后写的，而这个读，只能读当前的值，称为“当前读”。</li>
+</ol>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#隔离性">隔离性</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

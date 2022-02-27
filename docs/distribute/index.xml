@@ -1,10 +1,102 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes"?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>My New Hugo Site</title>
+    <title>分布式数据系统 on My New Hugo Site</title>
     <link>https://wxyyrain.github.io/docs/distribute/</link>
-    <description>Recent content on My New Hugo Site</description>
+    <description>Recent content in 分布式数据系统 on My New Hugo Site</description>
     <generator>Hugo -- gohugo.io</generator>
-    <language>en-us</language><atom:link href="https://wxyyrain.github.io/docs/distribute/index.xml" rel="self" type="application/rss+xml" />
+    <language>en-us</language>
+    <lastBuildDate>Fri, 25 Feb 2022 08:51:32 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/docs/distribute/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>数据复制</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/data_copy/</link>
+      <pubDate>Mon, 01 Jan 0001 00:00:00 +0000</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/data_copy/</guid>
+      <description>复制主要指通过互联网络在多台机器上保存相同数据的副本。通过数据复制方案，通常希望达到以下目的：
+  使数据在地理位置上更接近用户，从而降低访问延迟； 当部分组件出现故障，系统依然可以继续工作，从而提高可用性； 扩展至多台机器以同时提供数据访问服务，从而提高读吞吐量。   复制的数据并非一成不变，一般采用主从复制、多主节点复制和无主节点复制三种方案，处理那些持续更改的数据。
+ 主节点与从节点 #  主从复制原理：
+ 指定一个副本为主副本（或称为主节点）。当客户写数据库时，必须将写请求发送给主副本，主副本首先将新数据写入本地存储； 其他副本则全部称为从副本（或称为从节点）。主副本把新数据写入本地存储后，然后将数据更改作为复制的日志或更改流发送给所有从副本。每个从副本获得更改日志之后将其应用到本地，且严格保持与祝副本相同的写入顺序； 客户端从数据库中读数据时，可以在主副本或者从副本上执行查询。  同步/异步复制 #    同步
+ 同步复制主节点需要等待直到从节点确认完成了写入 。
+  优点：主从数据一致（万一主节点发生故障，可以在从节点访问最新数据）； 缺点：从节点无法完成确认的话（例如从节点崩溃或网络原因），写入不能视为成功。主节点会阻塞其后所有写操作，直到同步副本确认完成。    异步
+ 异步复制主节点发送消息后立即返回不用等待从节点确认 。
+  优点：从节点落后不会影响主节点响应写请求，系统吞吐性能更好； 缺点：数据不同步；如果主节点失败且不可恢复，所有尚未复制到从节点的写请求将丢失。   异步复制被广泛使用。场景：节点数据巨大；分布于广域地理环境。
+   半同步
+ 半同步，一个从节点同步，其他异步。
+  优点：至少两个节点拥有最新的数据副本。    链式同步
+  配置新的从节点 #   某个时间点对主节点的数据副本产生一个一致性快照 ； 将此快照拷贝到新的从节点 ； 从节点连接主节点请求快照点之后的的数据变更日志 ； 从节点处理快照点之后的数据变更，称为 追赶。  处理节点失效 #    从节点失效：追赶式恢复</description>
+    </item>
+    
+    <item>
+      <title>数据分区</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/data_shard/</link>
+      <pubDate>Mon, 31 Jan 2022 15:32:20 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/data_shard/</guid>
+      <description>分区通常是这样定义的，即每一条数据（或者每条记录，每行或每个文档）只属于某个特定分区。每个分区都可以视为一个完整的小型数据库，虽然数据库可能存在一些跨分区的操作。
+  采用分区的主要目的是提高可扩展性。不同的分区可以放在一个无共享集群的不同节点上。这样一个大数据集可以分散在更多的磁盘上，查询负载也随之分不到更多的处理器上。
+  对单个分区进行查询时，每个节点对自己所在分区可以独立执行查询操作，因此添加更多的节点可以提高查询吞吐量。超大而复杂的查询尽管比较困难，但也可能做到跨节点的并行处理。
+ 数据分区与数据复制 #   分区通常与复制结合使用，即每个分区在多个节点都存有副本。这意味着某条记录属于特定的分区，而同样的内容会保存在不同的节点上以提高系统的容错性。
+ 键-值数据分区 #   分区的主要目标是将数据和查询负载均匀分布在所有节点上。
+   倾斜
+ 而如果分区不均匀，则会出现某些分区节点比其他分区承担更多的数据量或查询负载，称之为倾斜。
+  倾斜会导致分区效率严重下降。在极端情况下，所有负载可能集中在一个分区节点上，这就意味着系统瓶颈在最烦忙的那个节点上。这种负载严重不成比例的分区即成为系统热点。
+   避免热点
+ 避免热点最简单的方法是将记录随机分配给所有的节点上。可以比较均匀的分布数据，但当试图读取特定数据时，不得不并行查询所有节点。
+  改进上述方法，通过关键字来访问记录。
+   基于关键字区间分区 #   为每个分区分配一段连续的关键字或者关键字区间范围（以最小值和最大值来指示）。
+   关键字的区间不一定非要均匀分布，因为数据本身可能就不均匀；
+ 例如，A和B开头的单词，一般比T、U、V、X、Y开头的单词多。如果只是简单的规定每个分区两个字母，可能导致有的分区比其他分区大很多。
+   分区边界可以由管理员手动确定，或者由数据库自动选择；
+  每个分区可以按照关键字排序保存；
+ 这样可以轻松支持区间查询。
+   缺点：某些访问模式可能导致热点。
+ 如果关键字是时间戳，假设每天一个分区，可能导致每天写入数据时候，所有写入操作都集中在一个分区，导致该分区在写入时负载过高，而其他分区空闲。
+   解决</description>
+    </item>
+    
+    <item>
+      <title>分布式系统的挑战</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/challenge/</link>
+      <pubDate>Fri, 25 Feb 2022 08:47:40 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/challenge/</guid>
+      <description>故障与部分失效 #  不可靠的网络 #  不可靠的时钟 #  知识、真相与谎言 #  </description>
+    </item>
+    
+    <item>
+      <title>事务</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/transaction/</link>
+      <pubDate>Tue, 08 Feb 2022 12:57:31 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/transaction/</guid>
+      <description>事务将应用程序的多个读、写操作捆绑在一起成为一个逻辑操作单元。即事务中的所有读写是一个执行的整体，整个事务要么成功（提交）、要么失败（中止或回滚）。
+  事务目的是简化应用层的编程模型。
+ 深入理解事务 #  ACID #   事务所提供的安全保证即大家所熟知的ACID。最早由TheoHarder和Andreas Reuter于1983年为精确描述数据库的容错机制而定义。
+  不符合ACID标准的系统有时被冠以BASE，取另外几个特性的首字母，即基本可用性（ Basically Available ），软状态（ Soft state ）和最终一致性（ Eventunal consistency)。
+   原子性
+ 原子性在计算机的不同领域里有着相似但却微妙的差异。
+  例如，多线程编程中，如果某线程执行一个原子操作，这意味着其他线程是无法看到该操作的中间结果。它只能处于操作之前或操作之后的状态，而不是两者之间的状态。
+  ACID 中的原子性并不关乎多个操作的并发性，它并没有描述多个线程试图访问相同的数据会发生什么情况，后者其实是由 ACID 的隔离性所定义。
+  ACID 中原子性所定义的特征是：在出错时中止事务，并将部分完成的写入全部丢弃。
+   一致性
+ ACID 中的一致性的主要是指对数据有特定的预期状态，任何数据更改必须满足这些状态约束（或者恒等条件）。
+  例如，对于一个账单系统，账户的贷款余额应和借款余额保持平衡。如果某事务从一个有效的状态开始，并且事务中任何更新操作都没有违背约束，那么最后的结果依然符合有效状态。
+  这种一致性本质上要求应用层来维护状态一致。
+  原子性，隔离性和持久性是数据库自身的属性，而ACID中的一致性更多是应用层的属性。 应用程序可能借助数据库提供的原子性和隔离性，以达到一致性，但一致性本身并不源于数据库。
+   隔离性
+ ACID语义中的隔离性意味着并发执行的多个事务相互隔离，它们不能互相交叉。
+  经典的数据库教材把隔离定义为可串行化，这意味着可以假装它是数据库上运行的唯一事务。虽然实际上它们可能同时运行，但数据库系统要确保当事务提交时，其结果与串行执行完全相同。</description>
+    </item>
+    
+    <item>
+      <title>一致性与共识</title>
+      <link>https://wxyyrain.github.io/docs/distribute/mds/consistency/</link>
+      <pubDate>Fri, 25 Feb 2022 08:51:32 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/distribute/mds/consistency/</guid>
+      <description>一致性保证 #  可线性化 #  顺序保证 #  分布式事务与 共识 #  </description>
+    </item>
+    
   </channel>
 </rss>
