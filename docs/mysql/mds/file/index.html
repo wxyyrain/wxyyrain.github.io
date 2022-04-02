@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="参数 innodb_file_per_table
+ 表数据既可以存在共享表空间里，也可以是单独的文件。这个行为是由参数 innodb_file_per_table 控制的：
+ OFF - 表的数据放在系统共享表空间，也就是跟数据字典放在一起； ON - 每个 InnoDB 表数据存储在一个以 .ibd 为后缀的文件中。  从 MySQL 5.6.6 版本开始，它的默认值就是 ON 。
+  建议不论使用 MySQL 的哪个版本，都将这个值设置为 ON。
+因为，一个表单独存储为一个文件更容易管理，而且在不需要这个表的时候，通过 drop table 命令，系统就会直接删除这个文件。而如果是放在共享表空间中，即使表删掉了，空间也是不会回收的。
+   删除 #  数据删除流程 #    删记录
+ 在Innodb中，删除一条记录只会把这条记录标记为删除。后续如果插入别的记录，可能会复用这个位置，但磁盘文件的的大小不会缩小。
+  记录的复用，只限于符合范围条件的数据。
+   删数据页
+ InnoDB 的数据是按页存储的，如果删掉一个数据页上的所有记录，整个数据页就可以被复用了。
+  与记录的复用不同，当整个页从B&#43; 树里面摘掉之后，可以复用任何位置，注意是任何位置。
+  如果相邻的两个数据页利用率都很小，系统就会把这两个页上的数据合到其中一个页上，另外一个数据页就被标记为可复用。
+   delete">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="表数据" />
+<meta property="og:description" content="参数 innodb_file_per_table
+ 表数据既可以存在共享表空间里，也可以是单独的文件。这个行为是由参数 innodb_file_per_table 控制的：
+ OFF - 表的数据放在系统共享表空间，也就是跟数据字典放在一起； ON - 每个 InnoDB 表数据存储在一个以 .ibd 为后缀的文件中。  从 MySQL 5.6.6 版本开始，它的默认值就是 ON 。
+  建议不论使用 MySQL 的哪个版本，都将这个值设置为 ON。
+因为，一个表单独存储为一个文件更容易管理，而且在不需要这个表的时候，通过 drop table 命令，系统就会直接删除这个文件。而如果是放在共享表空间中，即使表删掉了，空间也是不会回收的。
+   删除 #  数据删除流程 #    删记录
+ 在Innodb中，删除一条记录只会把这条记录标记为删除。后续如果插入别的记录，可能会复用这个位置，但磁盘文件的的大小不会缩小。
+  记录的复用，只限于符合范围条件的数据。
+   删数据页
+ InnoDB 的数据是按页存储的，如果删掉一个数据页上的所有记录，整个数据页就可以被复用了。
+  与记录的复用不同，当整个页从B&#43; 树里面摘掉之后，可以复用任何位置，注意是任何位置。
+  如果相邻的两个数据页利用率都很小，系统就会把这两个页上的数据合到其中一个页上，另外一个数据页就被标记为可复用。
+   delete" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/mysql/mds/file/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-03-14T23:46:26+08:00" />
+<meta property="article:modified_time" content="2022-03-14T23:46:26+08:00" />
+
+<title>表数据 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.0b91e583ed41c2dac49fa05a42853ad2e5ea48e24d6531669ba739d0df5c8a10.js" integrity="sha256-C5Hlg&#43;1BwtrEn6BaQoU60uXqSOJNZTFmm6c50N9cihA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">一维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/" class="">二维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/" class="">特殊</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/algorithm/" class="">算法</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/architecture/" class="">基础架构</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/questions/" class="">Questions</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/file/" class=" active">表数据</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>表数据</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#删除">删除</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><ul>
+<li>
+<p>参数 innodb_file_per_table</p>
+<blockquote>
+<p>表数据既可以存在共享表空间里，也可以是单独的文件。这个行为是由参数 innodb_file_per_table 控制的：</p>
+<ol>
+<li>OFF - 表的数据放在系统共享表空间，也就是跟数据字典放在一起；</li>
+<li>ON - 每个 InnoDB 表数据存储在一个以 .ibd 为后缀的文件中。</li>
+</ol>
+<p>从 MySQL 5.6.6 版本开始，它的默认值就是 ON 。</p>
+</blockquote>
+<blockquote>
+<p>建议不论使用 MySQL 的哪个版本，都将这个值设置为 ON。</p>
+<p>因为，一个表单独存储为一个文件更容易管理，而且在不需要这个表的时候，通过 drop table 命令，系统就会直接删除这个文件。而如果是放在共享表空间中，即使表删掉了，空间也是不会回收的。</p>
+</blockquote>
+</li>
+</ul>
+<h2 id="删除">
+  删除
+  <a class="anchor" href="#%e5%88%a0%e9%99%a4">#</a>
+</h2>
+<h4 id="数据删除流程">
+  数据删除流程
+  <a class="anchor" href="#%e6%95%b0%e6%8d%ae%e5%88%a0%e9%99%a4%e6%b5%81%e7%a8%8b">#</a>
+</h4>
+<ul>
+<li>
+<p>删记录</p>
+<blockquote>
+<p>在Innodb中，删除一条记录只会把这条记录标记为删除。后续如果插入别的记录，可能会复用这个位置，但磁盘文件的的大小不会缩小。</p>
+</blockquote>
+<blockquote>
+<p>记录的复用，只限于符合范围条件的数据。</p>
+</blockquote>
+</li>
+<li>
+<p>删数据页</p>
+<blockquote>
+<p>InnoDB 的数据是按页存储的，如果删掉一个数据页上的所有记录，整个数据页就可以被复用了。</p>
+</blockquote>
+<blockquote>
+<p>与记录的复用不同，当整个页从B+ 树里面摘掉之后，可以复用任何位置，注意是任何位置。</p>
+</blockquote>
+<blockquote>
+<p>如果相邻的两个数据页利用率都很小，系统就会把这两个页上的数据合到其中一个页上，另外一个数据页就被标记为可复用。</p>
+</blockquote>
+</li>
+<li>
+<p>delete</p>
+<blockquote>
+<p>用 delete 命令把整个表的数据删除，所有的数据页都会被标记为可复用。但是磁盘上，文件不会变小。</p>
+</blockquote>
+<blockquote>
+<p>delete 命令其实只是把记录的位置，或者数据页标记为了“可复用”，但磁盘文件的大小是不会变的。也就是说，通过 delete 命令是不能回收表空间的。这些可以复用，而没有被使用的空间，看起来就像是“空洞”。</p>
+</blockquote>
+</li>
+<li>
+<p>空洞</p>
+<blockquote>
+<p>插入数据同样可能造成空洞。</p>
+</blockquote>
+<blockquote>
+<p>如果数据是按照索引递增顺序插入的，那么索引是紧凑的。但如果数据是随机插入的，就可能造成索引的数据页分裂。</p>
+</blockquote>
+<blockquote>
+<p>另外，更新索引上的值，可以理解为删除一个旧的值，再插入一个新值。不难理解，这也是会造成空洞的。</p>
+</blockquote>
+</li>
+</ul>
+<h4 id="重建表">
+  重建表
+  <a class="anchor" href="#%e9%87%8d%e5%bb%ba%e8%a1%a8">#</a>
+</h4>
+<blockquote>
+<p>经过大量增删改的表，都是可能是存在空洞的。所以，如果能够把这些空洞去掉，就能达到收缩表空间的目的。</p>
+</blockquote>
+<blockquote>
+<p>重建表，就可以达到这样的目的。</p>
+</blockquote>
+<blockquote>
+<p>假设现在有一个表 A，需要做空间收缩，为了把表中存在的空洞去掉，可以新建一个与表 A 结构相同的表 B，然后按照主键 ID 递增的顺序，把数据一行一行地从表 A 里读出来再插入到表 B 中。</p>
+<p>由于表 B 是新建的表，所以表 A 主键索引上的空洞，在表 B 中就都不存在了。表 B 的主键索引更紧凑，数据页的利用率也更高。</p>
+<p>把表 B 作为临时表，数据从表 A 导入表 B 的操作完成后，用表 B 替换 A，从效果上看，就起到了收缩表 A 空间的作用。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#f92672">#</span> <span style="color:#960050;background-color:#1e0010">重建表命令</span>
+<span style="color:#66d9ef">alter</span> <span style="color:#66d9ef">table</span> A engine<span style="color:#f92672">=</span>InnoDB
+</code></pre></div><blockquote>
+<p>在 MySQL 5.5 版本之前，这个命令的执行流程跟前面描述的差不多，区别只是这个临时表 B 不需要你自己创建，MySQL 会自动完成转存数据、交换表名、删除旧表的操作。</p>
+<p>花时间最多的步骤是往临时表插入数据的过程，在这个过程中，有新的数据要写入到表 A 的话，就会造成数据丢失。</p>
+<p>在整个 DDL 过程中，表 A 中不能有更新。也就是说，这个 DDL 不是 Online 的。</p>
+</blockquote>
+<blockquote>
+<p>在 MySQL 5.6 版本开始引入的 Online DDL，对这个操作流程做了优化。</p>
+</blockquote>
+<p>Online DDL ，重建表的流程：</p>
+<ol>
+<li>建立一个临时文件，扫描表 A 主键的所有数据页；</li>
+<li>用数据页中表 A 的记录生成 B+ 树，存储到临时文件中；</li>
+<li>生成临时文件的过程中，将所有对 A 的操作记录在一个日志文件（row log）中，对应的是图中 state2 的状态；</li>
+<li>临时文件生成后，将日志文件中的操作应用到临时文件，得到一个逻辑数据上与表 A 相同的数据文件，对应的就是图中 state3 的状态；</li>
+<li>用临时文件替换表 A 的数据文件。</li>
+</ol>
+<p><img src="/images/mysql/online_alter_table.png" alt="image-20220326122623906" /></p>
+<blockquote>
+<p>由于日志文件记录和重放操作这个功能的存在，这个方案在重建表的过程中，允许对表 A 做增删改操作。这也就是 Online DDL 名字的来源。</p>
+</blockquote>
+<ul>
+<li>
+<p>MDL锁</p>
+<blockquote>
+<p>alter 语句在启动的时候需要获取 MDL 写锁，但是这个写锁在真正拷贝数据之前就退化成读锁了。</p>
+</blockquote>
+<ul>
+<li>
+<p>退化原因</p>
+<blockquote>
+<p>为了实现 Online，MDL 读锁不会阻塞增删改操作。</p>
+</blockquote>
+</li>
+<li>
+<p>为什么加锁</p>
+<blockquote>
+<p>为了保护自己，禁止其他线程对这个表同时做 DDL。</p>
+</blockquote>
+</li>
+</ul>
+</li>
+</ul>
+<blockquote>
+<p>对于一个大表来说，Online DDL 最耗时的过程就是拷贝数据到临时表的过程，这个步骤的执行期间可以接受增删改操作。所以，相对于整个 DDL 过程来说，锁的时间非常短。对业务来说，就可以认为是 Online 的。</p>
+</blockquote>
+<blockquote>
+<p>上述的这些重建方法都会扫描原表数据和构建临时文件。对于很大的表来说，这个操作是很消耗 IO 和 CPU 资源的。因此，如果是线上服务，你要很小心地控制操作时间。如果想要比较安全的操作的话，推荐使用 GitHub 开源的 gh-ost 来做。</p>
+</blockquote>
+<h4 id="online-和-inplace">
+  Online 和 inplace
+  <a class="anchor" href="#online-%e5%92%8c-inplace">#</a>
+</h4>
+<ul>
+<li>非 inplace</li>
+</ul>
+<blockquote>
+<p>把表 A 中的数据导出来的存放位置叫作 tmp_table。这是一个临时表，是在 server 层创建的。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#66d9ef">alter</span> <span style="color:#66d9ef">table</span> t engine<span style="color:#f92672">=</span>innodb,ALGORITHM<span style="color:#f92672">=</span><span style="color:#66d9ef">copy</span>;
+</code></pre></div><blockquote>
+<p>当使用 ALGORITHM=copy 的时候，表示的是强制拷贝表，对应的流程相当于MySQL 5.5 版本之前重建表的过程。</p>
+</blockquote>
+<ul>
+<li>Online DDL</li>
+</ul>
+<blockquote>
+<p>根据表 A 重建出来的数据是放在“tmp_file”里的，这个临时文件是 InnoDB 在内部创建出来的。整个 DDL 过程都在 InnoDB 内部完成。对于 server 层来说，没有把数据挪动到临时表，是一个“原地”操作，这就是“inplace”名称的来源。</p>
+</blockquote>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#f92672">#</span> <span style="color:#66d9ef">alter</span> <span style="color:#66d9ef">table</span> t engine<span style="color:#f92672">=</span>InnoDB <span style="color:#960050;background-color:#1e0010">隐含意思：</span>
+<span style="color:#66d9ef">alter</span> <span style="color:#66d9ef">table</span> t engine<span style="color:#f92672">=</span>innodb,ALGORITHM<span style="color:#f92672">=</span>inplace;
+</code></pre></div><p>两者关系：</p>
+<ol>
+<li>DDL 过程如果是 Online 的，就一定是 inplace 的；</li>
+<li>反过来未必，也就是说 inplace 的 DDL，有可能不是 Online 的。截止到 MySQL 8.0，添加全文索引（FULLTEXT index）和空间索引 (SPATIAL index) 就属于这种情况。</li>
+</ol>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#删除">删除</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

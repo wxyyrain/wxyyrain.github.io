@@ -5,7 +5,10 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="description" content="全局锁 #  对整个数据库加读锁：
 Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处于只读状态，其它线程以下这些操作会被阻塞：
- 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。   使用场景； 全库逻辑备份，也就是对整个库select出来成文本。 使用风险；   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表&#43;1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
+ 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。    使用场景；
+全库逻辑备份，也就是对整个库select出来成文本。
+  使用风险；
+   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表&#43;1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
   官方自带逻辑备份工具：mysqldump；   当mysqldump使用参数-single-transaction的时候，导数据之前会启动一个事务，确保拿到一致性视图。由于MVCC的支持，这个过程是可以更新的。
   有的存储引擎（比如MyIsAM）不支持事务，没有一致性读，这个时候就只能使用FTWRL了。
   只读配置：set global readonly=true。  全库只读还可以通过这个配置来实现，但一般我们不使用，原因如下：
@@ -15,7 +18,10 @@ Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处�
 <meta name="color-scheme" content="light dark"><meta property="og:title" content="锁" />
 <meta property="og:description" content="全局锁 #  对整个数据库加读锁：
 Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处于只读状态，其它线程以下这些操作会被阻塞：
- 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。   使用场景； 全库逻辑备份，也就是对整个库select出来成文本。 使用风险；   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表&#43;1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
+ 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。    使用场景；
+全库逻辑备份，也就是对整个库select出来成文本。
+  使用风险；
+   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表&#43;1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
   官方自带逻辑备份工具：mysqldump；   当mysqldump使用参数-single-transaction的时候，导数据之前会启动一个事务，确保拿到一致性视图。由于MVCC的支持，这个过程是可以更新的。
   有的存储引擎（比如MyIsAM）不支持事务，没有一致性读，这个时候就只能使用FTWRL了。
   只读配置：set global readonly=true。  全库只读还可以通过这个配置来实现，但一般我们不使用，原因如下：
@@ -31,7 +37,7 @@ Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处�
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.0b91e583ed41c2dac49fa05a42853ad2e5ea48e24d6531669ba739d0df5c8a10.js" integrity="sha256-C5Hlg&#43;1BwtrEn6BaQoU60uXqSOJNZTFmm6c50N9cihA=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -75,6 +81,76 @@ https://github.com/alex-shpak/hugo-book
 
   
   <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">一维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/" class="">二维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/" class="">特殊</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/algorithm/" class="">算法</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
     
       
         <li>
@@ -149,37 +225,6 @@ https://github.com/alex-shpak/hugo-book
 
   
     <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
-  
-
-        </li>
-      
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <span>数据结构和算法</span>
-  
-
-          
-  <ul>
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">基础数据结构</a>
   
 
         </li>
@@ -345,6 +390,45 @@ https://github.com/alex-shpak/hugo-book
   
 
   
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/architecture/" class="">基础架构</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
     <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
   
 
@@ -371,7 +455,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/questions/" class="">Questions</a>
   
 
         </li>
@@ -384,7 +468,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/file/" class="">表数据</a>
   
 
         </li>
@@ -539,9 +623,13 @@ https://github.com/alex-shpak/hugo-book
 <li>更新类事务的提交语句。</li>
 </ol>
 <ul>
-<li>使用场景；
-全库逻辑备份，也就是对整个库select出来成文本。</li>
-<li>使用风险；</li>
+<li>
+<p>使用场景；</p>
+<p>全库逻辑备份，也就是对整个库select出来成文本。</p>
+</li>
+<li>
+<p>使用风险；</p>
+</li>
 </ul>
 <ol>
 <li>如果在主库使用，期间都无法更新，业务都要停摆；</li>
@@ -641,12 +729,12 @@ A、B执行的时候，加了MDL读锁；C执行的时候，加了MDL写锁；�
 </h2>
 <ul>
 <li>
-<p>两阶段锁；
-在InnoDB事务中，行锁是需要的时候才加上的，但并不是不需要了就立刻释放，而是要等到事务结束的时候才释放。</p>
+<p>两阶段锁协议；</p>
+<p>在InnoDB事务中，行锁是需要的时候才加上的，但并不是不需要了就立刻释放，而是要等到事务结束的时候才释放。</p>
 </li>
 <li>
-<p>如何更好地使用；
-如果事务中需要锁多个行，把最可能造成锁冲突、最可能影响并发的锁尽量往后放。</p>
+<p>如何更好地使用；</p>
+<p>如果事务中需要锁多个行，把最可能造成锁冲突、最可能影响并发的锁尽量往后放。</p>
 </li>
 <li>
 <p>死锁；</p>

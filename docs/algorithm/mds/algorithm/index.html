@@ -1,0 +1,949 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="递归（recursion） #  public void recur(int level, int param) { // terminator  if (level &gt; MAX_LEVEL) { // process result  return; } // process current logic  process(level, param); // drill down  recur( level: level &#43; 1, newParam); // restore current status  }    题目 编号     爬楼梯 70   括号生成 22   翻转二叉树 226   验证二叉搜索树 98   二叉树的最大深度 104   二叉树的最小深度 111   二叉树的序列化与反序列化 297   二叉树的最近公共祖先 236   从前序与中序遍历序列构造二叉树 105   组合 77   全排列 46   全排列2 47     divide &amp; conquer backtrace     题目 编号     Pow(x, y) 50   子集 78   多数元素 169   电话号码的字母组合 17   N皇后 51   二叉树的层次遍历 102   最小基因变化 433   括号生成 22   在每个树行中找最大值 515   单词接龙 127   单词接龙2 126   岛屿数量 200   扫雷游戏 529    搜索（search） #    dfs">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="算法" />
+<meta property="og:description" content="递归（recursion） #  public void recur(int level, int param) { // terminator  if (level &gt; MAX_LEVEL) { // process result  return; } // process current logic  process(level, param); // drill down  recur( level: level &#43; 1, newParam); // restore current status  }    题目 编号     爬楼梯 70   括号生成 22   翻转二叉树 226   验证二叉搜索树 98   二叉树的最大深度 104   二叉树的最小深度 111   二叉树的序列化与反序列化 297   二叉树的最近公共祖先 236   从前序与中序遍历序列构造二叉树 105   组合 77   全排列 46   全排列2 47     divide &amp; conquer backtrace     题目 编号     Pow(x, y) 50   子集 78   多数元素 169   电话号码的字母组合 17   N皇后 51   二叉树的层次遍历 102   最小基因变化 433   括号生成 22   在每个树行中找最大值 515   单词接龙 127   单词接龙2 126   岛屿数量 200   扫雷游戏 529    搜索（search） #    dfs" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/algorithm/mds/algorithm/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-03-26T11:00:43+08:00" />
+<meta property="article:modified_time" content="2022-03-26T11:00:43+08:00" />
+
+<title>算法 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.0b91e583ed41c2dac49fa05a42853ad2e5ea48e24d6531669ba739d0df5c8a10.js" integrity="sha256-C5Hlg&#43;1BwtrEn6BaQoU60uXqSOJNZTFmm6c50N9cihA=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">一维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/" class="">二维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/" class="">特殊</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/algorithm/" class=" active">算法</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/architecture/" class="">基础架构</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/questions/" class="">Questions</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/file/" class="">表数据</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Redis</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>微服务</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>算法</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#递归recursion">递归（recursion）</a></li>
+    <li><a href="#搜索search">搜索（search）</a></li>
+    <li><a href="#二分查找binary-search">二分查找（binary search）</a></li>
+    <li><a href="#动态规划dynamic-programming">动态规划（dynamic programming）</a></li>
+    <li><a href="#贪心greedy">贪心（greedy）</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><h2 id="递归recursion">
+  递归（recursion）
+  <a class="anchor" href="#%e9%80%92%e5%bd%92recursion">#</a>
+</h2>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-java" data-lang="java"><span style="color:#66d9ef">public</span> <span style="color:#66d9ef">void</span> <span style="color:#a6e22e">recur</span><span style="color:#f92672">(</span><span style="color:#66d9ef">int</span> level<span style="color:#f92672">,</span> <span style="color:#66d9ef">int</span> param<span style="color:#f92672">)</span> <span style="color:#f92672">{</span> 
+
+  <span style="color:#75715e">// terminator 
+</span><span style="color:#75715e"></span>  <span style="color:#66d9ef">if</span> <span style="color:#f92672">(</span>level <span style="color:#f92672">&gt;</span> MAX_LEVEL<span style="color:#f92672">)</span> <span style="color:#f92672">{</span> 
+    <span style="color:#75715e">// process result 
+</span><span style="color:#75715e"></span>    <span style="color:#66d9ef">return</span><span style="color:#f92672">;</span> 
+  <span style="color:#f92672">}</span> 
+
+  <span style="color:#75715e">// process current logic 
+</span><span style="color:#75715e"></span>  process<span style="color:#f92672">(</span>level<span style="color:#f92672">,</span> param<span style="color:#f92672">);</span> 
+
+  <span style="color:#75715e">// drill down 
+</span><span style="color:#75715e"></span>  recur<span style="color:#f92672">(</span> level<span style="color:#f92672">:</span> level <span style="color:#f92672">+</span> 1<span style="color:#f92672">,</span> newParam<span style="color:#f92672">);</span> 
+
+  <span style="color:#75715e">// restore current status 
+</span><span style="color:#75715e"></span> 
+<span style="color:#f92672">}</span>
+</code></pre></div><table>
+<thead>
+<tr>
+<th>题目</th>
+<th>编号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/climbing-stairs/">爬楼梯</a></td>
+<td>70</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/generate-parentheses/">括号生成</a></td>
+<td>22</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/invert-binary-tree/description/">翻转二叉树</a></td>
+<td>226</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/validate-binary-search-tree/">验证二叉搜索树</a></td>
+<td>98</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/maximum-depth-of-binary-tree/">二叉树的最大深度</a></td>
+<td>104</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/minimum-depth-of-binary-tree/">二叉树的最小深度</a></td>
+<td>111</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/serialize-and-deserialize-binary-tree/">二叉树的序列化与反序列化</a></td>
+<td>297</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/lowest-common-ancestor-of-a-binary-tree/">二叉树的最近公共祖先</a></td>
+<td>236</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/construct-binary-tree-from-preorder-and-inorder-traversal/">从前序与中序遍历序列构造二叉树</a></td>
+<td>105</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/combinations/">组合</a></td>
+<td>77</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/permutations/">全排列</a></td>
+<td>46</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/permutations-ii/">全排列2</a></td>
+<td>47</td>
+</tr>
+</tbody>
+</table>
+<ul>
+<li>divide &amp; conquer</li>
+<li>backtrace</li>
+</ul>
+<table>
+<thead>
+<tr>
+<th>题目</th>
+<th>编号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/powx-n/">Pow(x,  y)</a></td>
+<td>50</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/subsets/">子集</a></td>
+<td>78</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/majority-element/description/">多数元素</a></td>
+<td>169</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/letter-combinations-of-a-phone-number/">电话号码的字母组合</a></td>
+<td>17</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/n-queens/">N皇后</a></td>
+<td>51</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/binary-tree-level-order-traversal/#/description">二叉树的层次遍历</a></td>
+<td>102</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/minimum-genetic-mutation/#/description">最小基因变化</a></td>
+<td>433</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/generate-parentheses/#/description">括号生成</a></td>
+<td>22</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/find-largest-value-in-each-tree-row/#/description">在每个树行中找最大值</a></td>
+<td>515</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/word-ladder/description/">单词接龙</a></td>
+<td>127</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/word-ladder-ii/description/">单词接龙2</a></td>
+<td>126</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/number-of-islands/">岛屿数量</a></td>
+<td>200</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/minesweeper/description/">扫雷游戏</a></td>
+<td>529</td>
+</tr>
+</tbody>
+</table>
+<h2 id="搜索search">
+  搜索（search）
+  <a class="anchor" href="#%e6%90%9c%e7%b4%a2search">#</a>
+</h2>
+<ul>
+<li>
+<p>dfs</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py">visited <span style="color:#f92672">=</span> set() 
+
+<span style="color:#66d9ef">def</span> <span style="color:#a6e22e">dfs</span>(node, visited):
+    <span style="color:#66d9ef">if</span> node <span style="color:#f92672">in</span> visited: <span style="color:#75715e"># terminator</span>
+     <span style="color:#75715e"># already visited </span>
+     <span style="color:#66d9ef">return</span> 
+
+ visited<span style="color:#f92672">.</span>add(node) 
+
+ <span style="color:#75715e"># process current node here. </span>
+ <span style="color:#f92672">...</span>
+ <span style="color:#66d9ef">for</span> next_node <span style="color:#f92672">in</span> node<span style="color:#f92672">.</span>children(): 
+  <span style="color:#66d9ef">if</span> next_node <span style="color:#f92672">not</span> <span style="color:#f92672">in</span> visited: 
+   dfs(next_node, visited)
+</code></pre></div><div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">DFS</span>(self, tree): 
+
+ <span style="color:#66d9ef">if</span> tree<span style="color:#f92672">.</span>root <span style="color:#f92672">is</span> <span style="color:#66d9ef">None</span>: 
+  <span style="color:#66d9ef">return</span> [] 
+
+ visited, stack <span style="color:#f92672">=</span> [], [tree<span style="color:#f92672">.</span>root]
+
+ <span style="color:#66d9ef">while</span> stack: 
+  node <span style="color:#f92672">=</span> stack<span style="color:#f92672">.</span>pop() 
+  visited<span style="color:#f92672">.</span>add(node)
+
+  process (node) 
+  nodes <span style="color:#f92672">=</span> generate_related_nodes(node) 
+  stack<span style="color:#f92672">.</span>push(nodes) 
+
+ <span style="color:#75715e"># other processing work</span>
+</code></pre></div></li>
+<li>
+<p>bfs</p>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-py" data-lang="py"><span style="color:#66d9ef">def</span> <span style="color:#a6e22e">BFS</span>(graph, start, end):
+    visited <span style="color:#f92672">=</span> set()
+ queue <span style="color:#f92672">=</span> [] 
+ queue<span style="color:#f92672">.</span>append([start]) 
+
+ <span style="color:#66d9ef">while</span> queue: 
+  node <span style="color:#f92672">=</span> queue<span style="color:#f92672">.</span>pop() 
+  visited<span style="color:#f92672">.</span>add(node)
+
+  process(node) 
+  nodes <span style="color:#f92672">=</span> generate_related_nodes(node) 
+  queue<span style="color:#f92672">.</span>push(nodes)
+
+ <span style="color:#75715e"># other processing work </span>
+</code></pre></div></li>
+<li>
+<p>A*</p>
+</li>
+</ul>
+<h2 id="二分查找binary-search">
+  二分查找（binary search）
+  <a class="anchor" href="#%e4%ba%8c%e5%88%86%e6%9f%a5%e6%89%bebinary-search">#</a>
+</h2>
+<table>
+<thead>
+<tr>
+<th>题目</th>
+<th>编号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/sqrtx/">X的平方根</a></td>
+<td>69</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/valid-perfect-square/">有效的完全平方数</a></td>
+<td>367</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/search-in-rotated-sorted-array/">搜索旋转排序数组</a></td>
+<td>33</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/search-a-2d-matrix/">搜索二维矩阵</a></td>
+<td>74</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/find-minimum-in-rotated-sorted-array/">寻找旋转排序数组的最小值</a></td>
+<td>153</td>
+</tr>
+</tbody>
+</table>
+<h2 id="动态规划dynamic-programming">
+  动态规划（dynamic programming）
+  <a class="anchor" href="#%e5%8a%a8%e6%80%81%e8%a7%84%e5%88%92dynamic-programming">#</a>
+</h2>
+<table>
+<thead>
+<tr>
+<th>题目</th>
+<th>编号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/maximum-subarray/">最大子序和</a></td>
+<td>53</td>
+</tr>
+</tbody>
+</table>
+<h2 id="贪心greedy">
+  贪心（greedy）
+  <a class="anchor" href="#%e8%b4%aa%e5%bf%83greedy">#</a>
+</h2>
+<table>
+<thead>
+<tr>
+<th>题目</th>
+<th>编号</th>
+</tr>
+</thead>
+<tbody>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/lemonade-change/description/">柠檬水找零</a></td>
+<td>860</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/best-time-to-buy-and-sell-stock-ii/description/">买卖股票的最佳时机2</a></td>
+<td>122</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/assign-cookies/description/">分发饼干</a></td>
+<td>455</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/walking-robot-simulation/description/">模拟行走机器人</a></td>
+<td>874</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/jump-game/">跳跃游戏</a></td>
+<td>55</td>
+</tr>
+<tr>
+<td><a href="https://leetcode-cn.com/problems/jump-game-ii/">跳跃游戏2</a></td>
+<td>45</td>
+</tr>
+</tbody>
+</table>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#递归recursion">递归（recursion）</a></li>
+    <li><a href="#搜索search">搜索（search）</a></li>
+    <li><a href="#二分查找binary-search">二分查找（binary search）</a></li>
+    <li><a href="#动态规划dynamic-programming">动态规划（dynamic programming）</a></li>
+    <li><a href="#贪心greedy">贪心（greedy）</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+

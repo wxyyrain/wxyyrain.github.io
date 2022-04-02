@@ -6,7 +6,48 @@
     <description>Recent content on My New Hugo Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 26 Feb 2022 12:11:09 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 26 Mar 2022 11:00:43 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>基础架构</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/architecture/</link>
+      <pubDate>Wed, 09 Mar 2022 23:53:41 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/architecture/</guid>
+      <description>Server层 #   包括连接器、查询缓存、分析器、优化器、执行器等，涵盖 MySQL 的大多数核心服务功能，以及所有的内置函数（如日期、时间、数学和加密函数等），所有跨存储引擎的功能都在这一层实现，比如存储过程、触发器、视图等。
+ 连接器 #   负责跟客户端建立连接、获取权限、维持和管理连接。
+ mysql -h$ip -P$port -u$user -p  一个用户成功建立连接后，即使你用管理员账号对这个用户的权限做了修改，也不会影响已经存在连接的权限。修改完成后，只有再新建的连接才会使用新的权限设置。 连接完成后，如果没有后续的动作，这个连接就处于空闲状态，可以在 show processlist 命令中看到它。 Command 列显示为“Sleep”的这一行，就表示现在系统里面有一个空闲连接。客户端如果太长时间没动静，连接器就会自动将它断开。这个时间是由参数 wait_timeout 控制的，默认值是 8 小时。 如果在连接被断开之后，客户端再次发送请求的话，就会收到一个错误提醒： Lost connection to MySQL server during query。这时候如果你要继续，就需要重连，然后再执行请求了。    长连接：连接成功后，如果客户端持续有请求，则一直使用同一个连接。
+  短连接：每次执行完很少的几次查询就断开连接，下次查询再重新建立一个。
+  比较：建立连接的过程通常是比较复杂的，所以在使用中要尽量减少建立连接的动作，也就是尽量使用长连接。
+  使用长连接可能产生的问题：有些时候 MySQL 占用内存涨得特别快。解决方案：
+ MySQL 在执行过程中临时使用的内存是管理在连接对象里面的。这些资源会在连接断开的时候才释放。所以如果长连接累积下来，可能导致内存占用太大，被系统强行杀掉（OOM），从现象看就是 MySQL 异常重启了。
+  定期断开长连接。使用一段时间，或者程序里面判断执行过一个占用内存的大查询后，断开连接，之后要查询再重连。 如果你用的是 MySQL 5.7 或更新版本，可以在每次执行一个比较大的操作后，通过执行 mysql_reset_connection 来重新初始化连接资源。这个过程不需要重连和重新做权限验证，但是会将连接恢复到刚刚创建完时的状态。    查询缓存 #   MySQL 8.</description>
+    </item>
+    
+    <item>
+      <title>一维</title>
+      <link>https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/</link>
+      <pubDate>Mon, 31 Jan 2022 15:47:28 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/</guid>
+      <description>数组（array） #   数组是一种线性表数据结构。它用一组连续的内存空间，来存储一组具有相同类型的数据。
+ 特点 #    线性表
+ 线性表就是数据排列像一条线一样的数据结构，每个线性表上的数据最多只有前和后两个方向。
+  链表、队列、栈等也是线性表结构。
+  二叉树、堆、图等，是非线性表，因为数据之间并不是简单的前后关系。
+   连续的内存空间和相同的数据类型
+ 这两个限制，使数组有了随机访问的特性，计算机可以使用以下寻址公式，随机访问数组中的某个元素：
+ a[i]_address = base_address + i * data_type_size  base_address 为数组的起始地址，data_type_size是每个元素占用的内存的大小，i是元素的索引。
+   低效的插入和删除
+ 为了保证数组的连续性，在进行插入、删除操作的时候，需要做大量的数据迁移工作，因此效率会低一些。
+   插入
+ 假设数组的长度为 n，如果需要将一个数据插入到数组中的第 k 个位置。为了把第 k 个位置腾出来，给新来的数据，需要将第 k～n 这部分的元素都顺序地往后挪一位。
+如果数据插在末尾，这时的时间复杂度为 O(1)。
+但如果在数组的开头插入元素，那所有的数据都需要依次往后移动一位，所以最坏时间复杂度是 O(n)。平均情况时间复杂度为 (1+2+…n)/n=O(n)。
+   删除
+ 跟插入数据类似，如果要删除第 k 个位置的数据，为了内存的连续性，也需要搬移数据，不然中间就会出现空洞，内存就不连续了。
+   优化</description>
+    </item>
+    
     <item>
       <title>前置知识</title>
       <link>https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/</link>
@@ -24,30 +65,6 @@
  Precision（查准率）：尽可能返回较少无关文档 Recall（查全率）：尽量返回较多相关文档 Ranking：能否按照相关度排序   绿色代表应该被搜索到的结果，黄色代表不应该被搜索到的结果。
  Precision = True Postive / (True and False Positives)
 Recall = True Postive / (True Positives + False Negtives)</description>
-    </item>
-    
-    <item>
-      <title>索引</title>
-      <link>https://wxyyrain.github.io/docs/mysql/mds/1_index/</link>
-      <pubDate>Thu, 27 Jan 2022 08:58:27 +0800</pubDate>
-      
-      <guid>https://wxyyrain.github.io/docs/mysql/mds/1_index/</guid>
-      <description>索引的类型 #   索引的出现是为了提高数据查询的效率，就像书的目录一样。实现索引的方式也有很多种，MySQL有如下几种类型的索引。
- 哈希索引 #   哈希索引是基于哈希表这种数据结构的索引。
-   优点
- 新增、精确查询都很快，O(1)的时间复杂度。
-   缺点
-  无法用于排序和分组； 区间查询很慢。     适用场景：等值查询
-  全文索引 #   MyISAM存储引擎支持全文索引，用于查找文本中的关键词，而不是直接比较是否相等。 查找条件使用MATCH AGAINST，而不是普通的WHERE。
-全文索引使用倒排索引实现，它记录着关键词到其所在文档的映射。
-InnoDB存储引擎在MySQL 5.6.4 版本中也开始支持全文索引。
- B+树索引 #  不同数据结构的出现，主要是为了解决不同场景，不同操作的效率问题。B+树是适合存在磁盘的数据结构，它有以下特点：
-  B+树的每个节点都是一页；
- 从磁盘读取数据的时候，并不是一条一条读的，而是读“一块”（好几条）数据到内存。在MySQL中，这“一块”的单位就是页，默认大小为16k。
-   B+树是N叉树，N取决于字段的大小和页的大小；
- 假设一棵二叉树高度为5，目标值在树的底部，那么在进行深度优先搜索过程中，就需要经过5个节点。对于存储在磁盘的B+树来说，经过5个节点就意味着要查询5次磁盘，是比较耗时的操作。如果这棵树的高度低一些，就意味着可以少进行几次查询磁盘的操作。
-  同样一棵树，每个节点的子节点（扇出）越多，那么它的树高也越低。所以B+树是N叉树的结构，是更适合磁盘的数据结构。
-  以整数（bigint）字段索引为例，一个key为8B，一个引用约为6B，所以一条数据的索引占据空间约为14B，一页可以存：16K/14B ≈ 1170 条数据的索引，也就是说，此时N = 1170，是1170叉树。</description>
     </item>
     
     <item>
@@ -88,6 +105,33 @@ InnoDB存储引擎在MySQL 5.6.4 版本中也开始支持全文索引。
     </item>
     
     <item>
+      <title>二维</title>
+      <link>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/</link>
+      <pubDate>Sat, 26 Mar 2022 10:48:23 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/</guid>
+      <description>树（tree） #  图（graph） #  二叉搜索树（binary search tree） #     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  </description>
+    </item>
+    
+    <item>
+      <title>日志</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/log/</link>
+      <pubDate>Sat, 26 Feb 2022 12:10:07 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/log/</guid>
+      <description>使用InnoDB引擎过程中，比较耳熟能详的三种日志：
+ undo log：用于回滚； redo log：崩溃恢复； bin log：备份、主从同步。  WAL技术：Write-Ahead Logging，先写日志，再写磁盘。
+ 如果每一次更新操作都要写入磁盘，查找+写入的IO成本很高，使用WAL技术可以避免。
+ redo log 重做日志 #   InnoDB 引擎就会先把记录写到 redo log里面，并更新内存，这个时候更新就算完成了； 同时，InnoDB 引擎会在适当的时候，将这个操作记录更新到磁盘里面，而这个更新往往是在系统比较空闲的时候做。  redo log的大小是固定的，可以配置为一组四个的文件，每个文件的大小是1GB，那么总共就可以记录4GB的操作。从头开始写，写到末尾就回到开头循环写。
+ write pos：当前记录的位置，一边写一遍后移，写到3号文件末尾就回到0号文件开头； check point：当前要擦除的位置，也是往后推移并且循环的，擦除记录前要把记录更新到数据文件； write pos和check point之间是空白位置，可以用来记录新的操作。如果write pos追上了check point，这时不能再执行更新操作，要先停下来擦除一些记录，把check point 推进一下。   个人理解redo log其实是利用了磁盘的顺序写提高性能；redo log保证了crash-safe，已提交的数据不会丢失。
+ flush #   把内存里的数据写入磁盘的过程就是flush。
+   脏页
+ 当内存数据页跟磁盘数据页内容不一致的时候，称这个内存页为“脏页”。内存数据写入到磁盘后，内存和磁盘上的数据页的内容就一致了，称为“干净页”。
+   flush 场景
+  InnoDB 的 redo log 写满了；</description>
+    </item>
+    
+    <item>
       <title>数据分区</title>
       <link>https://wxyyrain.github.io/docs/distribute/mds/data_shard/</link>
       <pubDate>Mon, 31 Jan 2022 15:32:20 +0800</pubDate>
@@ -116,22 +160,6 @@ InnoDB存储引擎在MySQL 5.6.4 版本中也开始支持全文索引。
     </item>
     
     <item>
-      <title>锁</title>
-      <link>https://wxyyrain.github.io/docs/mysql/mds/lock/</link>
-      <pubDate>Fri, 28 Jan 2022 15:30:52 +0800</pubDate>
-      
-      <guid>https://wxyyrain.github.io/docs/mysql/mds/lock/</guid>
-      <description>全局锁 #  对整个数据库加读锁：
-Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处于只读状态，其它线程以下这些操作会被阻塞：
- 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。   使用场景； 全库逻辑备份，也就是对整个库select出来成文本。 使用风险；   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表+1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
-  官方自带逻辑备份工具：mysqldump；   当mysqldump使用参数-single-transaction的时候，导数据之前会启动一个事务，确保拿到一致性视图。由于MVCC的支持，这个过程是可以更新的。
-  有的存储引擎（比如MyIsAM）不支持事务，没有一致性读，这个时候就只能使用FTWRL了。
-  只读配置：set global readonly=true。  全库只读还可以通过这个配置来实现，但一般我们不使用，原因如下：
- 异常处理机制的差异：执行FTWRL命令发生异常后，会自动释放全局锁，数据库会回到可更新的状态；如果是使用set global readonly=true的方式，发生异常后数据库仍然处于只读状态； 有些系统中，readonly 的值会被用来做其他逻辑，比如用来判断一个库是主库还是备库。  表级锁 #  表锁 #  表锁的语法：
-## 加锁 lock tables … read/write ## 主动解锁 unlock tables 在客户端断开连接时，会主动释放锁。 loack tables除了限定别的线程的读写外，也限定了本线程接下来的操作对象：</description>
-    </item>
-    
-    <item>
       <title>分布式原理</title>
       <link>https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/</link>
       <pubDate>Sun, 26 Dec 2021 12:14:33 +0800</pubDate>
@@ -150,31 +178,35 @@ Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处�
     </item>
     
     <item>
+      <title>特殊</title>
+      <link>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/</link>
+      <pubDate>Sat, 26 Mar 2022 10:48:32 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/</guid>
+      <description>位运算（bitewise） #  布隆过滤器（bloom filter） #  LRU Cache #  </description>
+    </item>
+    
+    <item>
       <title>事务</title>
       <link>https://wxyyrain.github.io/docs/mysql/mds/transaction/</link>
       <pubDate>Sat, 26 Feb 2022 12:11:09 +0800</pubDate>
       
       <guid>https://wxyyrain.github.io/docs/mysql/mds/transaction/</guid>
-      <description>隔离性 #  隔离级别 #   读未提交（read uncommitted）； 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题） 读提交（read committed）； 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题） 可重复读（repeatable read）； 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。 串行化（serializable）。 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。  不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
- 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  MVCC #   read view 实现mvcc用到的一致性视图，即 consistent read view，用于支持RC和RR隔离级别的实现。   RC级别下，每一个SQL语句创建一个read view；RR隔离级别下，在事务一开始创建一个read view并一直使用。
-  事务id InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。   每行数据都有一个隐藏字段row_trx_id，这个字段的值就是transaction id。
-  undo log 每条记录在更新的的同时会记录一条回滚操作（undo log），记录上最新的值，可以通过回滚操作，得到前一个状态的值。同一条记录在系统可以存在多个版本，这就是数据库的多版本并发控制（MVCC）。   回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。
-  可重复读实现   事务数组：InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id； 低水位：数组里面事务id的最小值； 高水位：当前系统里面已经创建过的事务id最大值+1； 一致性视图：由事务数组和高水位组成。  数据版本的可见性，基于数据的row_trx_id和一致性视图对比的结果。对于当前事务启动瞬间来说，一个数据版本的row_trx_id可能有几种情况：</description>
-    </item>
-    
-    <item>
-      <title>日志</title>
-      <link>https://wxyyrain.github.io/docs/mysql/mds/log/</link>
-      <pubDate>Sat, 26 Feb 2022 12:10:07 +0800</pubDate>
-      
-      <guid>https://wxyyrain.github.io/docs/mysql/mds/log/</guid>
-      <description>使用InnoDB引擎过程中，比较耳熟能详的三种日志：
- undo log：用于回滚； redo log：崩溃恢复； bin log：备份、主从同步。  WAL技术：Write-Ahead Logging，先写日志，再写磁盘。
- 如果每一次更新操作都要写入磁盘，查找+写入的IO成本很高，使用WAL技术可以避免。
- redo log 重做日志 #   InnoDB 引擎就会先把记录写到 redo log里面，并更新内存，这个时候更新就算完成了； 同时，InnoDB 引擎会在适当的时候，将这个操作记录更新到磁盘里面，而这个更新往往是在系统比较空闲的时候做。  redo log的大小是固定的，可以配置为一组四个的文件，每个文件的大小是1GB，那么总共就可以记录4GB的操作。从头开始写，写到末尾就回到开头循环写。
- write pos：当前记录的位置，一边写一遍后移，写到3号文件末尾就回到0号文件开头； check point：当前要擦除的位置，也是往后推移并且循环的，擦除记录前要把记录更新到数据文件； write pos和check point之间是空白位置，可以用来记录新的操作。如果write pos追上了check point，这时不能再执行更新操作，要先停下来擦除一些记录，把check point 推进一下。   个人理解redo log其实是利用了磁盘的顺序写提高性能；redo log保证了crash-safe，已提交的数据不会丢失。
- binlog 归档日志 #   归档：同义词为存档，指将处理完并且具有保存价值的事情或文件经系统整理后交档案室（馆）保存备案(备查)的过程。
- 与 redo log 的不同 #   redo log是InnoDB引擎特有的；bin log是MySQLServer层实现的，所有引擎都可以使用； redo log是物理日志，记录的是“在某个数据页上做了什么修改”；binlog是逻辑日志，记录的是这个语句的原始逻辑； redo log是循环写的，空间固定会被用完；binlog是可以追加写入的。追加写”是指 binlog 文件写到一定大小后会切换到下一个，并不会覆盖以前的日志。  为什么有两份日志 #  最开始MySQL的设计是用binlog作为归档用途，且MySQL刚开始是没有crash-safe能力的。后面出现了InnoDB引擎，通过redo log实现了crash-safe。</description>
+      <description>隔离性 #  隔离级别 #    读未提交（read uncommitted）；
+ 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题）
+   读提交（read committed）；
+ 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题）
+   可重复读（repeatable read）；
+ 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。
+   串行化（serializable）。
+ 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务 必须等前一个事务执行完成，才能继续执行。
+   不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
+ 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  事务隔离的实现 #   在 MySQL 中，实际上每条记录在更新的时候都会同时记录一条回滚操作。记录上的最新值，通过回滚操作，都可以得到前一个状态的值。
+ 假设一个值从 1 被按顺序改成了 2、3、4，在回滚日志里面就会有类似下面的记录。
+ 当前值是 4，但是在查询这条记录的时候，不同时刻启动的事务会有不同的 read-view。
+如图中看到的，在视图 A、B、C 里面，这一个记录的值分别是 1、2、4，同一条记录在系统中可以存在多个版本，就是数据库的多版本并发控制（MVCC）。
+对于 read-view A，要得到 1，就必须将当前值依次执行图中所有的回滚操作得到。
+  回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。   因此长事务意味着系统里面会存在很老的事务视图。由于这些事务随时可能访问数据库里面的任何数据，所以这个事务提交之前，数据库里面它可能用到的回滚记录都必须保留，这就会导致大量占用存储空间。</description>
     </item>
     
     <item>
@@ -228,12 +260,45 @@ Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处�
     </item>
     
     <item>
+      <title>算法</title>
+      <link>https://wxyyrain.github.io/docs/algorithm/mds/algorithm/</link>
+      <pubDate>Sat, 26 Mar 2022 11:00:43 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/algorithm/mds/algorithm/</guid>
+      <description>递归（recursion） #  public void recur(int level, int param) { // terminator  if (level &amp;gt; MAX_LEVEL) { // process result  return; } // process current logic  process(level, param); // drill down  recur( level: level + 1, newParam); // restore current status  }    题目 编号     爬楼梯 70   括号生成 22   翻转二叉树 226   验证二叉搜索树 98   二叉树的最大深度 104   二叉树的最小深度 111   二叉树的序列化与反序列化 297   二叉树的最近公共祖先 236   从前序与中序遍历序列构造二叉树 105   组合 77   全排列 46   全排列2 47     divide &amp;amp; conquer backtrace     题目 编号     Pow(x, y) 50   子集 78   多数元素 169   电话号码的字母组合 17   N皇后 51   二叉树的层次遍历 102   最小基因变化 433   括号生成 22   在每个树行中找最大值 515   单词接龙 127   单词接龙2 126   岛屿数量 200   扫雷游戏 529    搜索（search） #    dfs</description>
+    </item>
+    
+    <item>
       <title>一致性与共识</title>
       <link>https://wxyyrain.github.io/docs/distribute/mds/consistency/</link>
       <pubDate>Fri, 25 Feb 2022 08:51:32 +0800</pubDate>
       
       <guid>https://wxyyrain.github.io/docs/distribute/mds/consistency/</guid>
       <description>一致性保证 #  可线性化 #  顺序保证 #  分布式事务与 共识 #  </description>
+    </item>
+    
+    <item>
+      <title>索引</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/1_index/</link>
+      <pubDate>Thu, 27 Jan 2022 08:58:27 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/1_index/</guid>
+      <description>索引的类型 #   索引的出现是为了提高数据查询的效率，就像书的目录一样。实现索引的方式也有很多种，MySQL有如下几种类型的索引。
+ 哈希索引 #   哈希索引是基于哈希表这种数据结构的索引。
+   优点
+ 新增、精确查询都很快，O(1)的时间复杂度。
+   缺点
+  无法用于排序和分组； 区间查询很慢。     适用场景：等值查询
+  全文索引 #   MyISAM存储引擎支持全文索引，用于查找文本中的关键词，而不是直接比较是否相等。 查找条件使用MATCH AGAINST，而不是普通的WHERE。
+全文索引使用倒排索引实现，它记录着关键词到其所在文档的映射。
+InnoDB存储引擎在MySQL 5.6.4 版本中也开始支持全文索引。
+ B+树索引 #  不同数据结构的出现，主要是为了解决不同场景，不同操作的效率问题。B+树是适合存在磁盘的数据结构，它有以下特点：
+  B+树的每个节点都是一页；
+ 从磁盘读取数据的时候，并不是一条一条读的，而是读“一块”（好几条）数据到内存。在MySQL中，这“一块”的单位就是页，默认大小为16k。
+   B+树是N叉树，N取决于字段的大小和页的大小；
+ 假设一棵二叉树高度为5，目标值在树的底部，那么在进行深度优先搜索过程中，就需要经过5个节点。对于存储在磁盘的B+树来说，经过5个节点就意味着要查询5次磁盘，是比较耗时的操作。如果这棵树的高度低一些，就意味着可以少进行几次查询磁盘的操作。
+  同样一棵树，每个节点的子节点（扇出）越多，那么它的树高也越低。所以B+树是N叉树的结构，是更适合磁盘的数据结构。
+  以整数（bigint）字段索引为例，一个key为8B，一个引用约为6B，所以一条数据的索引占据空间约为14B，一页可以存：16K/14B ≈ 1170 条数据的索引，也就是说，此时N = 1170，是1170叉树。</description>
     </item>
     
     <item>
@@ -245,6 +310,25 @@ Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处�
       <description>聚合语法 #  { &amp;#34;size&amp;#34;: 0, &amp;#34;aggs&amp;#34;: { // 与query同级的关键词  &amp;#34;&amp;lt;aggs_name&amp;gt;&amp;#34;: { // 自定义的聚合名字  &amp;#34;&amp;lt;aggs_type&amp;gt;&amp;#34;: { // 聚合的定义：不同的Type + Body  &amp;lt;aggs_body&amp;gt; }, &amp;#34;aggs&amp;#34;: {} // 子聚合查询  }, &amp;#34;&amp;lt;aggs_name_2&amp;gt;&amp;#34; : {} // 可以包含多个同级的聚合查询  } } Metric #   一些系列的统计方法，会基于数据集计算结果，除了支持在字段上进行计算，同样也支持在脚本（painless script）产生的结果之上进行计算，类比SQL中的max、min等函数。
    单值分析：只输出一个分析结果
    aggs_type 含义     min 最小值   max 最大值   avg 平均值   sum 求和   cardinality 去重求数量，相当于distinct count      多值分析</description>
+    </item>
+    
+    <item>
+      <title>锁</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/lock/</link>
+      <pubDate>Fri, 28 Jan 2022 15:30:52 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/lock/</guid>
+      <description>全局锁 #  对整个数据库加读锁：
+Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处于只读状态，其它线程以下这些操作会被阻塞：
+ 数据更新语句（数据的增删改查）； 数据定义语句（包括建表、修改表结构等）； 更新类事务的提交语句。    使用场景；
+全库逻辑备份，也就是对整个库select出来成文本。
+  使用风险；
+   如果在主库使用，期间都无法更新，业务都要停摆； 如果在从库使用，期间无法同步从主库传过来的binlog，导致主从不一致。   备份数据时加锁的必要性； 不加锁的话，备份所得到的库不是一个逻辑时间点，无法保证数据的一致性。   比如在极客时间买课的场景，有课程表和余额表。 假设逻辑是先扣减余额，再增加课程。 备份从库的过程中，如果先同步了余额表，在同步课程表之前：用户买了一门课，此时主库的余额表-1，主库的课程表+1。 这之后从库同步了课程表，这时从库的余额表就与主库不一致了。从库的角度来看，用户没扣除余额，却增加了课程。
+  官方自带逻辑备份工具：mysqldump；   当mysqldump使用参数-single-transaction的时候，导数据之前会启动一个事务，确保拿到一致性视图。由于MVCC的支持，这个过程是可以更新的。
+  有的存储引擎（比如MyIsAM）不支持事务，没有一致性读，这个时候就只能使用FTWRL了。
+  只读配置：set global readonly=true。  全库只读还可以通过这个配置来实现，但一般我们不使用，原因如下：
+ 异常处理机制的差异：执行FTWRL命令发生异常后，会自动释放全局锁，数据库会回到可更新的状态；如果是使用set global readonly=true的方式，发生异常后数据库仍然处于只读状态； 有些系统中，readonly 的值会被用来做其他逻辑，比如用来判断一个库是主库还是备库。  表级锁 #  表锁 #  表锁的语法：
+## 加锁 lock tables … read/write ## 主动解锁 unlock tables 在客户端断开连接时，会主动释放锁。 loack tables除了限定别的线程的读写外，也限定了本线程接下来的操作对象：</description>
     </item>
     
     <item>
@@ -308,28 +392,37 @@ Flush tables with read lock (FTWRL) 使用这个命令之后，数据库会处�
     </item>
     
     <item>
-      <title>基础数据结构</title>
-      <link>https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/</link>
-      <pubDate>Mon, 31 Jan 2022 15:47:28 +0800</pubDate>
+      <title>Questions</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/questions/</link>
+      <pubDate>Sun, 13 Mar 2022 10:14:32 +0800</pubDate>
       
-      <guid>https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/</guid>
-      <description>数组 #   数组是一种线性表数据结构。它用一组连续的内存空间，来存储一组具有相同类型的数据。
- 特点 #    线性表
- 线性表就是数据排列像一条线一样的数据结构，每个线性表上的数据最多只有前和后两个方向。
-  链表、队列、栈等也是线性表结构。
-  二叉树、堆、图等，是非线性表，因为数据之间并不是简单的前后关系。
-   连续的内存空间和相同的数据类型
- 这两个限制，使数组有了随机访问的特性，计算机可以使用以下寻址公式，随机访问数组中的某个元素：
- a[i]_address = base_address + i * data_type_size  base_address 为数组的起始地址，data_type_size是每个元素占用的内存的大小，i是元素的索引。
-   低效的插入和删除
- 为了保证数组的连续性，在进行插入、删除操作的时候，需要做大量的数据迁移工作，因此效率会低一些。
-   插入
- 假设数组的长度为 n，如果需要将一个数据插入到数组中的第 k 个位置。为了把第 k 个位置腾出来，给新来的数据，需要将第 k～n 这部分的元素都顺序地往后挪一位。
-如果数据插在末尾，这时的时间复杂度为 O(1)。
-但如果在数组的开头插入元素，那所有的数据都需要依次往后移动一位，所以最坏时间复杂度是 O(n)。平均情况时间复杂度为 (1+2+…n)/n=O(n)。
-   删除
- 跟插入数据类似，如果要删除第 k 个位置的数据，为了内存的连续性，也需要搬移数据，不然中间就会出现空洞，内存就不连续了。
-   优化</description>
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/questions/</guid>
+      <description>1 #   如果表 T 中没有字段 k，而你执行了这个语句 select * from T where k=1, 那肯定是会报“不存在这个列”的错误： “Unknown column ‘k’ in ‘where clause’”。你觉得这个错误是在我们上面提到的哪个阶段报出来的呢？
+ 2 #   定期全量备份的周期“取决于系统重要性，有的是一天一备，有的是一周一备”。那么在什么场景下，一天一备会比一周一备更有优势呢？或者说，它影响了这个数据库系统的哪个指标？
+ 3 #   系统里面应该避免长事务，如果你是业务开发负责人同时也是数据库负责人，你会有什么方案来避免出现或者处理这种情况呢？
+ 4 #  alter table T drop index k; alter table T add index(k); alter table T drop primary key; alter table T add primary key(id);  对于上面这两个重建索引的作法，说出你的理解。如果有不合适的，为什么，更好的方法是什么？
+ 5 #  CREATE TABLE `geek` ( `a` int(11) NOT NULL, `b` int(11) NOT NULL, `c` int(11) NOT NULL, `d` int(11) NOT NULL, PRIMARY KEY (`a`,`b`), KEY `c` (`c`), KEY `ca` (`c`,`a`), KEY `cb` (`c`,`b`) ) ENGINE=InnoDB; 公司的同事告诉他说，由于历史原因，这个表需要 a、b 做联合主键，这个小吕理解了。但是，学过本章内容的小吕又纳闷了，既然主键包含了 a、b 这两个字段，那意味着单独在字段 c 上创建一个索引，就已经包含了三个字段了呀，为什么要创建“ca”“cb”这两个索引？同事告诉他，是因为他们的业务里面有这样的两种语句：</description>
+    </item>
+    
+    <item>
+      <title>表数据</title>
+      <link>https://wxyyrain.github.io/docs/mysql/mds/file/</link>
+      <pubDate>Mon, 14 Mar 2022 23:46:26 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/mysql/mds/file/</guid>
+      <description>参数 innodb_file_per_table
+ 表数据既可以存在共享表空间里，也可以是单独的文件。这个行为是由参数 innodb_file_per_table 控制的：
+ OFF - 表的数据放在系统共享表空间，也就是跟数据字典放在一起； ON - 每个 InnoDB 表数据存储在一个以 .ibd 为后缀的文件中。  从 MySQL 5.6.6 版本开始，它的默认值就是 ON 。
+  建议不论使用 MySQL 的哪个版本，都将这个值设置为 ON。
+因为，一个表单独存储为一个文件更容易管理，而且在不需要这个表的时候，通过 drop table 命令，系统就会直接删除这个文件。而如果是放在共享表空间中，即使表删掉了，空间也是不会回收的。
+   删除 #  数据删除流程 #    删记录
+ 在Innodb中，删除一条记录只会把这条记录标记为删除。后续如果插入别的记录，可能会复用这个位置，但磁盘文件的的大小不会缩小。
+  记录的复用，只限于符合范围条件的数据。
+   删数据页
+ InnoDB 的数据是按页存储的，如果删掉一个数据页上的所有记录，整个数据页就可以被复用了。
+  与记录的复用不同，当整个页从B+ 树里面摘掉之后，可以复用任何位置，注意是任何位置。
+  如果相邻的两个数据页利用率都很小，系统就会把这两个页上的数据合到其中一个页上，另外一个数据页就被标记为可复用。
+   delete</description>
     </item>
     
   </channel>

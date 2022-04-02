@@ -3,18 +3,38 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="隔离性 #  隔离级别 #   读未提交（read uncommitted）； 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题） 读提交（read committed）； 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题） 可重复读（repeatable read）； 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。 串行化（serializable）。 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。  不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
- 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  MVCC #   read view 实现mvcc用到的一致性视图，即 consistent read view，用于支持RC和RR隔离级别的实现。   RC级别下，每一个SQL语句创建一个read view；RR隔离级别下，在事务一开始创建一个read view并一直使用。
-  事务id InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。   每行数据都有一个隐藏字段row_trx_id，这个字段的值就是transaction id。
-  undo log 每条记录在更新的的同时会记录一条回滚操作（undo log），记录上最新的值，可以通过回滚操作，得到前一个状态的值。同一条记录在系统可以存在多个版本，这就是数据库的多版本并发控制（MVCC）。   回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。
-  可重复读实现   事务数组：InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id； 低水位：数组里面事务id的最小值； 高水位：当前系统里面已经创建过的事务id最大值&#43;1； 一致性视图：由事务数组和高水位组成。  数据版本的可见性，基于数据的row_trx_id和一致性视图对比的结果。对于当前事务启动瞬间来说，一个数据版本的row_trx_id可能有几种情况：">
+<meta name="description" content="隔离性 #  隔离级别 #    读未提交（read uncommitted）；
+ 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题）
+   读提交（read committed）；
+ 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题）
+   可重复读（repeatable read）；
+ 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。
+   串行化（serializable）。
+ 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务 必须等前一个事务执行完成，才能继续执行。
+   不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
+ 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  事务隔离的实现 #   在 MySQL 中，实际上每条记录在更新的时候都会同时记录一条回滚操作。记录上的最新值，通过回滚操作，都可以得到前一个状态的值。
+ 假设一个值从 1 被按顺序改成了 2、3、4，在回滚日志里面就会有类似下面的记录。
+ 当前值是 4，但是在查询这条记录的时候，不同时刻启动的事务会有不同的 read-view。
+如图中看到的，在视图 A、B、C 里面，这一个记录的值分别是 1、2、4，同一条记录在系统中可以存在多个版本，就是数据库的多版本并发控制（MVCC）。
+对于 read-view A，要得到 1，就必须将当前值依次执行图中所有的回滚操作得到。
+  回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。   因此长事务意味着系统里面会存在很老的事务视图。由于这些事务随时可能访问数据库里面的任何数据，所以这个事务提交之前，数据库里面它可能用到的回滚记录都必须保留，这就会导致大量占用存储空间。">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light dark"><meta property="og:title" content="事务" />
-<meta property="og:description" content="隔离性 #  隔离级别 #   读未提交（read uncommitted）； 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题） 读提交（read committed）； 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题） 可重复读（repeatable read）； 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。 串行化（serializable）。 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。  不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
- 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  MVCC #   read view 实现mvcc用到的一致性视图，即 consistent read view，用于支持RC和RR隔离级别的实现。   RC级别下，每一个SQL语句创建一个read view；RR隔离级别下，在事务一开始创建一个read view并一直使用。
-  事务id InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。   每行数据都有一个隐藏字段row_trx_id，这个字段的值就是transaction id。
-  undo log 每条记录在更新的的同时会记录一条回滚操作（undo log），记录上最新的值，可以通过回滚操作，得到前一个状态的值。同一条记录在系统可以存在多个版本，这就是数据库的多版本并发控制（MVCC）。   回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。
-  可重复读实现   事务数组：InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id； 低水位：数组里面事务id的最小值； 高水位：当前系统里面已经创建过的事务id最大值&#43;1； 一致性视图：由事务数组和高水位组成。  数据版本的可见性，基于数据的row_trx_id和一致性视图对比的结果。对于当前事务启动瞬间来说，一个数据版本的row_trx_id可能有几种情况：" />
+<meta property="og:description" content="隔离性 #  隔离级别 #    读未提交（read uncommitted）；
+ 一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题）
+   读提交（read committed）；
+ 一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题）
+   可重复读（repeatable read）；
+ 一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。
+   串行化（serializable）。
+ 对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务 必须等前一个事务执行完成，才能继续执行。
+   不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：
+ 可重复读，这个视图是在事务启动时创建的，整个事务存在期间都用这个视图； 读提交，这个视图是在每个SQL语句开始执行的时候创建的； 读未提交，直接返回记录上最新的值； 串行化，加锁避免并行访问。  事务隔离的实现 #   在 MySQL 中，实际上每条记录在更新的时候都会同时记录一条回滚操作。记录上的最新值，通过回滚操作，都可以得到前一个状态的值。
+ 假设一个值从 1 被按顺序改成了 2、3、4，在回滚日志里面就会有类似下面的记录。
+ 当前值是 4，但是在查询这条记录的时候，不同时刻启动的事务会有不同的 read-view。
+如图中看到的，在视图 A、B、C 里面，这一个记录的值分别是 1、2、4，同一条记录在系统中可以存在多个版本，就是数据库的多版本并发控制（MVCC）。
+对于 read-view A，要得到 1，就必须将当前值依次执行图中所有的回滚操作得到。
+  回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。   因此长事务意味着系统里面会存在很老的事务视图。由于这些事务随时可能访问数据库里面的任何数据，所以这个事务提交之前，数据库里面它可能用到的回滚记录都必须保留，这就会导致大量占用存储空间。" />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://wxyyrain.github.io/docs/mysql/mds/transaction/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2022-02-26T12:11:09+08:00" />
@@ -25,7 +45,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.3ea7de5fc85a8373b5d5df21ddd149cd2d7e779e3f55c62fdc7e8427de5830c7.js" integrity="sha256-PqfeX8hag3O11d8h3dFJzS1&#43;d54/VcYv3H6EJ95YMMc=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.0b91e583ed41c2dac49fa05a42853ad2e5ea48e24d6531669ba739d0df5c8a10.js" integrity="sha256-C5Hlg&#43;1BwtrEn6BaQoU60uXqSOJNZTFmm6c50N9cihA=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -69,6 +89,76 @@ https://github.com/alex-shpak/hugo-book
 
   
   <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">一维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/" class="">二维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/" class="">特殊</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/algorithm/" class="">算法</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
     
       
         <li>
@@ -143,37 +233,6 @@ https://github.com/alex-shpak/hugo-book
 
   
     <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
-  
-
-        </li>
-      
-    
-  </ul>
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <span>数据结构和算法</span>
-  
-
-          
-  <ul>
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">基础数据结构</a>
   
 
         </li>
@@ -339,6 +398,45 @@ https://github.com/alex-shpak/hugo-book
   
 
   
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/architecture/" class="">基础架构</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class=" active">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
     <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
   
 
@@ -365,7 +463,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class=" active">事务</a>
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/questions/" class="">Questions</a>
   
 
         </li>
@@ -378,7 +476,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/file/" class="">表数据</a>
   
 
         </li>
@@ -500,6 +598,12 @@ https://github.com/alex-shpak/hugo-book
         <li></li>
       </ul>
     </li>
+    <li><a href="#mvcc">MVCC</a></li>
+    <li><a href="#事务的启动方式">事务的启动方式</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
   </ul>
 </nav>
 
@@ -521,14 +625,30 @@ https://github.com/alex-shpak/hugo-book
   <a class="anchor" href="#%e9%9a%94%e7%a6%bb%e7%ba%a7%e5%88%ab">#</a>
 </h4>
 <ol>
-<li>读未提交（read uncommitted）；
-一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题）</li>
-<li>读提交（read committed）；
-一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题）</li>
-<li>可重复读（repeatable read）；
-一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。</li>
-<li>串行化（serializable）。
-对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务必须等前一个事务执行完成，才能继续执行。</li>
+<li>
+<p>读未提交（read uncommitted）；</p>
+<blockquote>
+<p>一个事务还未提交时，它的变更就能被别的事务看到。（脏读问题）</p>
+</blockquote>
+</li>
+<li>
+<p>读提交（read committed）；</p>
+<blockquote>
+<p>一个事务提交之后，它做的变更才会被其他事务看到。（不可重复读、幻读问题）</p>
+</blockquote>
+</li>
+<li>
+<p>可重复读（repeatable read）；</p>
+<blockquote>
+<p>一个事务执行过程中看到的数据，总是跟这个事务在启动时看到的数据是一致的。</p>
+</blockquote>
+</li>
+<li>
+<p>串行化（serializable）。</p>
+<blockquote>
+<p>对于同一行记录，写会加写锁，读会加读锁。当出现读写锁冲突的时候，后访问的事务 必须等前一个事务执行完成，才能继续执行。</p>
+</blockquote>
+</li>
 </ol>
 <p>不同隔离级别，在一些场景看到的查询结果是不同的，在实现上，是通过创建一个视图，访问的时候以这个视图为准：</p>
 <ol>
@@ -537,36 +657,48 @@ https://github.com/alex-shpak/hugo-book
 <li>读未提交，直接返回记录上最新的值；</li>
 <li>串行化，加锁避免并行访问。</li>
 </ol>
-<h4 id="mvcc">
-  MVCC
-  <a class="anchor" href="#mvcc">#</a>
+<h4 id="事务隔离的实现">
+  事务隔离的实现
+  <a class="anchor" href="#%e4%ba%8b%e5%8a%a1%e9%9a%94%e7%a6%bb%e7%9a%84%e5%ae%9e%e7%8e%b0">#</a>
 </h4>
-<ul>
-<li>read view
-实现mvcc用到的一致性视图，即 consistent read view，用于支持RC和RR隔离级别的实现。</li>
-</ul>
 <blockquote>
-<p>RC级别下，每一个SQL语句创建一个read view；RR隔离级别下，在事务一开始创建一个read view并一直使用。</p>
+<p>在 MySQL 中，实际上每条记录在更新的时候都会同时记录一条回滚操作。记录上的最新值，通过回滚操作，都可以得到前一个状态的值。</p>
+</blockquote>
+<p>假设一个值从 1 被按顺序改成了 2、3、4，在回滚日志里面就会有类似下面的记录。</p>
+<p><img src="/images/mysql/read_view.png" alt="image-20220313175623248" /></p>
+<blockquote>
+<p>当前值是 4，但是在查询这条记录的时候，不同时刻启动的事务会有不同的 read-view。</p>
+<p>如图中看到的，在视图 A、B、C 里面，这一个记录的值分别是 1、2、4，同一条记录在系统中可以存在多个版本，就是数据库的多版本并发控制（MVCC）。</p>
+<p>对于 read-view A，要得到 1，就必须将当前值依次执行图中所有的回滚操作得到。</p>
 </blockquote>
 <ul>
-<li>事务id
-InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。</li>
+<li>回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。</li>
+</ul>
+<blockquote>
+<p>因此长事务意味着系统里面会存在很老的事务视图。由于这些事务随时可能访问数据库里面的任何数据，所以这个事务提交之前，数据库里面它可能用到的回滚记录都必须保留，这就会导致大量占用存储空间。</p>
+</blockquote>
+<h2 id="mvcc">
+  MVCC
+  <a class="anchor" href="#mvcc">#</a>
+</h2>
+<ul>
+<li>
+<p>事务id</p>
+<p>InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在事务开始时向事务系统申请的，按照申请顺序严格递增。</p>
+</li>
 </ul>
 <blockquote>
 <p>每行数据都有一个隐藏字段row_trx_id，这个字段的值就是transaction id。</p>
 </blockquote>
-<ul>
-<li>undo log
-每条记录在更新的的同时会记录一条回滚操作（undo log），记录上最新的值，可以通过回滚操作，得到前一个状态的值。同一条记录在系统可以存在多个版本，这就是数据库的多版本并发控制（MVCC）。</li>
-</ul>
+<p><img src="/images/mysql/mvcc_undo.png" alt="image-20220313192022262" /></p>
 <blockquote>
-<p>回滚日志会在不需要的时候删除：系统里面没有比这个回滚日志更早的read-view的时候。</p>
+<p>图中的三个虚线箭头，就是 undo log；而 V1、V2、V3 并不是物理上真实存在的，而是每次需要的时候根据当前版本和 undo log 计算出来的。比如，需要 V2 的时候，就是通过 V4 依次执行 U3、U2 算出来。</p>
 </blockquote>
 <ul>
-<li>可重复读实现</li>
+<li>事务数组</li>
 </ul>
 <ol>
-<li>事务数组：InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id；</li>
+<li>InnoDB为每个事务构造了一个数组，用来保存这个事务启动的时候，当前正在活跃（启动但还未提交）的所有事务id；</li>
 <li>低水位：数组里面事务id的最小值；</li>
 <li>高水位：当前系统里面已经创建过的事务id最大值+1；</li>
 <li>一致性视图：由事务数组和高水位组成。</li>
@@ -601,7 +733,38 @@ InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在�
 <li>一致性读：普通查询都是一致性读，具有可重读的特点；</li>
 <li>当前读：更新数据都是先读后写的，而这个读，只能读当前的值，称为“当前读”。</li>
 </ol>
-</article>
+<h2 id="事务的启动方式">
+  事务的启动方式
+  <a class="anchor" href="#%e4%ba%8b%e5%8a%a1%e7%9a%84%e5%90%af%e5%8a%a8%e6%96%b9%e5%bc%8f">#</a>
+</h2>
+<ol>
+<li>
+<p>显式启动事务语句；</p>
+<blockquote>
+<p>begin 或 start transaction。配套的提交语句是 commit，回滚语句是 rollback。</p>
+</blockquote>
+</li>
+<li>
+<p>set autocommit=0。</p>
+<blockquote>
+<p>这个命令会将这个线程的自动提交关掉。意味着如果你只执行一个 select 语句，这个事务就启动了，而且并不会自动提交。这个事务持续存在直到你主动执行 commit 或 rollback 语句，或者断开连接。</p>
+</blockquote>
+</li>
+</ol>
+<blockquote>
+<p>有些客户端连接框架会默认连接成功后先执行一个 set autocommit=0 的命令。这就导致接下来的查询都在事务中，如果是长连接，就导致了意外的长事务。</p>
+</blockquote>
+<blockquote>
+<p>对于一个需要频繁使用事务的业务，第二种方式每个事务在开始时都不需要主动执行一次 “begin”，减少了语句的交互次数。如果纠结“多一次交互”的问题，可以使用<code>commit work and chain </code>语法（提交事务并开启下一个事务（少执行一个begin语句））。</p>
+</blockquote>
+<h4 id="查询长事务">
+  查询长事务
+  <a class="anchor" href="#%e6%9f%a5%e8%af%a2%e9%95%bf%e4%ba%8b%e5%8a%a1">#</a>
+</h4>
+<div class="highlight"><pre tabindex="0" style="color:#f8f8f2;background-color:#272822;-moz-tab-size:4;-o-tab-size:4;tab-size:4"><code class="language-sql" data-lang="sql"><span style="color:#f92672">#</span> <span style="color:#960050;background-color:#1e0010">查找持续时间超过</span> <span style="color:#ae81ff">60</span>s <span style="color:#960050;background-color:#1e0010">的事务</span>
+<span style="color:#66d9ef">select</span> <span style="color:#f92672">*</span> <span style="color:#66d9ef">from</span> information_schema.innodb_trx <span style="color:#66d9ef">where</span> 
+TIME_TO_SEC(timediff(now(),trx_started))<span style="color:#f92672">&gt;</span><span style="color:#ae81ff">60</span>
+</code></pre></div></article>
  
       
 
@@ -643,6 +806,12 @@ InnoDB每个事务都有一个唯一的事务id，叫做transaction id，是在�
 <nav id="TableOfContents">
   <ul>
     <li><a href="#隔离性">隔离性</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#mvcc">MVCC</a></li>
+    <li><a href="#事务的启动方式">事务的启动方式</a>
       <ul>
         <li></li>
       </ul>

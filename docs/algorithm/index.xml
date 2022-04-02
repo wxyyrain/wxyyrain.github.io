@@ -6,14 +6,14 @@
     <description>Recent content in 数据结构和算法 on My New Hugo Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 31 Jan 2022 15:47:28 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/docs/algorithm/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sat, 26 Mar 2022 11:00:43 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/docs/algorithm/index.xml" rel="self" type="application/rss+xml" />
     <item>
-      <title>基础数据结构</title>
+      <title>一维</title>
       <link>https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/</link>
       <pubDate>Mon, 31 Jan 2022 15:47:28 +0800</pubDate>
       
       <guid>https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/</guid>
-      <description>数组 #   数组是一种线性表数据结构。它用一组连续的内存空间，来存储一组具有相同类型的数据。
+      <description>数组（array） #   数组是一种线性表数据结构。它用一组连续的内存空间，来存储一组具有相同类型的数据。
  特点 #    线性表
  线性表就是数据排列像一条线一样的数据结构，每个线性表上的数据最多只有前和后两个方向。
   链表、队列、栈等也是线性表结构。
@@ -30,6 +30,33 @@
    删除
  跟插入数据类似，如果要删除第 k 个位置的数据，为了内存的连续性，也需要搬移数据，不然中间就会出现空洞，内存就不连续了。
    优化</description>
+    </item>
+    
+    <item>
+      <title>二维</title>
+      <link>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/</link>
+      <pubDate>Sat, 26 Mar 2022 10:48:23 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/</guid>
+      <description>树（tree） #  图（graph） #  二叉搜索树（binary search tree） #     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  </description>
+    </item>
+    
+    <item>
+      <title>特殊</title>
+      <link>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/</link>
+      <pubDate>Sat, 26 Mar 2022 10:48:32 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/</guid>
+      <description>位运算（bitewise） #  布隆过滤器（bloom filter） #  LRU Cache #  </description>
+    </item>
+    
+    <item>
+      <title>算法</title>
+      <link>https://wxyyrain.github.io/docs/algorithm/mds/algorithm/</link>
+      <pubDate>Sat, 26 Mar 2022 11:00:43 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/algorithm/mds/algorithm/</guid>
+      <description>递归（recursion） #  public void recur(int level, int param) { // terminator  if (level &amp;gt; MAX_LEVEL) { // process result  return; } // process current logic  process(level, param); // drill down  recur( level: level + 1, newParam); // restore current status  }    题目 编号     爬楼梯 70   括号生成 22   翻转二叉树 226   验证二叉搜索树 98   二叉树的最大深度 104   二叉树的最小深度 111   二叉树的序列化与反序列化 297   二叉树的最近公共祖先 236   从前序与中序遍历序列构造二叉树 105   组合 77   全排列 46   全排列2 47     divide &amp;amp; conquer backtrace     题目 编号     Pow(x, y) 50   子集 78   多数元素 169   电话号码的字母组合 17   N皇后 51   二叉树的层次遍历 102   最小基因变化 433   括号生成 22   在每个树行中找最大值 515   单词接龙 127   单词接龙2 126   岛屿数量 200   扫雷游戏 529    搜索（search） #    dfs</description>
     </item>
     
   </channel>
