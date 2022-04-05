@@ -38,7 +38,7 @@
       <pubDate>Sat, 26 Mar 2022 10:48:23 +0800</pubDate>
       
       <guid>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/</guid>
-      <description>树（tree） #  图（graph） #  二叉搜索树（binary search tree） #     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  </description>
+      <description>树（tree） #  图（graph） #  二叉搜索树（binary search tree） #  遍历 #   前序：根&amp;ndash;左&amp;ndash;右 中序：左&amp;ndash;根&amp;ndash;右 后序：左&amp;ndash;右&amp;ndash;根     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  </description>
     </item>
     
     <item>

@@ -6,7 +6,30 @@
     <description>Recent content on My New Hugo Site</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sat, 26 Mar 2022 11:00:43 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <lastBuildDate>Sun, 03 Apr 2022 14:47:25 +0800</lastBuildDate><atom:link href="https://wxyyrain.github.io/index.xml" rel="self" type="application/rss+xml" />
+    <item>
+      <title>基础</title>
+      <link>https://wxyyrain.github.io/docs/hbase/mds/base/</link>
+      <pubDate>Sun, 03 Apr 2022 14:47:25 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/hbase/mds/base/</guid>
+      <description>数据模型 #    Table
+ Hbase的table由多个行组成。
+   Row
+ 一个行在Hbase中由一个或多个有值的列组成。Row按照字母进行排序，因此行健的设计非常重要。这种设计方式可以让有关系的行非常的近，通常行健的设计是网站的域名反转，比如(org.apache.www, org.apache.mail, org.apache.jira)，这样的话所有的Apache的域名就很接近。
+   Cloumn
+ 列由列簇加上列的标识组成，一般是“列簇:列标识”，创建表的时候不用指定列标识。
+   Column Family
+ 列簇在物理上包含了许多的列与列的值，每个列簇都有一些存储的属性可配置。例如是否使用缓存，压缩类型，存储版本数等。在表中，每一行都有相同的列簇，尽管有些列簇什么东西也没有存。
+   Column Qualifier
+ 列簇的限定词，理解为列的唯一标识。但是列标识是可以改变的，因此每一行可能有不同的列标识。
+   Cell
+ Cell是由row，column family,column qualifier包含时间戳与值组成的，一般表达某个值的版本。
+   Timestamp
+ 时间戳一般写在value的旁边，代表某个值的版本号，默认的时间戳是你写入数据的那一刻，但是你也可以在写入数据的时候指定不同的时间戳。
+      属性 Hbase Rdbms     数据类型 只有字符串 丰富的数据类型   数据操作 增删改查，不支持join 各种函数和表连接   存储模式 基于列式存储 基于表结构和行式存储   数据保护 更新后仍然保留旧版本 替换   可伸缩性 轻易增加节点 需要中间层，牺牲性能    RowKey #  RowKey是会按字典序排序的，HBase表会用RowKey来横向切分表。无论是读和写都是用RowKey去定位到HRegion，然后找到HRegionServer。</description>
+    </item>
+    
     <item>
       <title>基础架构</title>
       <link>https://wxyyrain.github.io/docs/mysql/mds/architecture/</link>
@@ -105,12 +128,33 @@ Recall = True Postive / (True Positives + False Negtives)</description>
     </item>
     
     <item>
+      <title>架构</title>
+      <link>https://wxyyrain.github.io/docs/hbase/mds/architecture/</link>
+      <pubDate>Sun, 03 Apr 2022 12:23:26 +0800</pubDate>
+      
+      <guid>https://wxyyrain.github.io/docs/hbase/mds/architecture/</guid>
+      <description>Client #  提供了访问HBase的接口，并且维护了对应的cache来加速HBase的访问。
+Zookeeper #  存储HBase的元数据（meta表），无论是读还是写数据，都是去Zookeeper里边拿到meta元数据告诉给客户端去哪台机器读写数据。
+HRegionServer #  处理客户端的读写请求，负责与HDFS底层交互，是真正干活的节点。
+ HBase是分布式的，HBase一张表的数据会分到多台机器上的（通过RowKey切分）。一个HRegionServer可以有多个HRegion。
+ HRegion #  一个HRegion上，存储HBase表的一部分数据。HRegion下面有Store。
+ 一个HBase表首先要定义列族，然后列是在列族之下的，列可以随意添加。一个列族的数据是存储在一起的，所以一个列族的数据是存储在一个Store里边的。
+   Store
+ Store里边有Mem Store、Store File、HFile。
+ HBase在写数据的时候，会先写到Mem Store，当MemStore超过一定阈值，就会将内存中的数据刷写到硬盘上，形成StoreFile，而StoreFile底层是以HFile的格式保存，HFile是HBase中KeyValue数据的存储格式。
+  HLog #  写数据的时候是先写到内存的，为了防止机器宕机，内存的数据没刷到磁盘中就挂了。在写Mem store的时候还会写一份HLog。HLog是顺序写到磁盘的。
+总结 #   HRegionServer是真正干活的机器（用于与hdfs交互），HBase表用RowKey来横向切分表； HRegion里边会有多个Store，每个Store其实就是一个列族的数据（所以可以说HBase是基于列族存储的）； Store里边有Men Store和StoreFile(HFile)，其实就是先走一层内存，然后再刷到磁盘的结构。  读写简流程 #   client请求到Zookeeper，然后Zookeeper返回HRegionServer地址给client，client得到Zookeeper返回的地址去请求HRegionServer，HRegionServer读写数据后返回给client。
+ HMaster #  HMaster会处理 HRegion 的分配或转移。如果我们HRegion的数据量太大的话，HMaster会对拆分后的Region重新分配RegionServer。（如果发现失效的HRegion，也会将失效的HRegion分配到正常的HRegionServer中）
+HMaster会处理元数据的变更和监控RegionServer的状态。</description>
+    </item>
+    
+    <item>
       <title>二维</title>
       <link>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/</link>
       <pubDate>Sat, 26 Mar 2022 10:48:23 +0800</pubDate>
       
       <guid>https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/</guid>
-      <description>树（tree） #  图（graph） #  二叉搜索树（binary search tree） #     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  </description>
+      <description>树（tree） #  图（graph） #  二叉搜索树（binary search tree） #  遍历 #   前序：根&amp;ndash;左&amp;ndash;右 中序：左&amp;ndash;根&amp;ndash;右 后序：左&amp;ndash;右&amp;ndash;根     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  </description>
     </item>
     
     <item>

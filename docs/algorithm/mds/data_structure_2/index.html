@@ -3,10 +3,10 @@
 <head>
   <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<meta name="description" content="树（tree） #  图（graph） #  二叉搜索树（binary search tree） #     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  ">
+<meta name="description" content="树（tree） #  图（graph） #  二叉搜索树（binary search tree） #  遍历 #   前序：根&ndash;左&ndash;右 中序：左&ndash;根&ndash;右 后序：左&ndash;右&ndash;根     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  ">
 <meta name="theme-color" content="#FFFFFF">
 <meta name="color-scheme" content="light dark"><meta property="og:title" content="二维" />
-<meta property="og:description" content="树（tree） #  图（graph） #  二叉搜索树（binary search tree） #     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  " />
+<meta property="og:description" content="树（tree） #  图（graph） #  二叉搜索树（binary search tree） #  遍历 #   前序：根&ndash;左&ndash;右 中序：左&ndash;根&ndash;右 后序：左&ndash;右&ndash;根     题目 编号     二叉树的中序遍历 94   二叉树的前序遍历 144   N叉树的后续遍历 590   N叉树的前续遍历 589   N叉树的层序遍历 429    堆（heap） #  并查集（disjoint set） #  字典树（Trie） #  " />
 <meta property="og:type" content="article" />
 <meta property="og:url" content="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/" /><meta property="article:section" content="docs" />
 <meta property="article:published_time" content="2022-03-26T10:48:23+08:00" />
@@ -17,7 +17,7 @@
 <link rel="icon" href="/favicon.png" type="image/x-icon">
 <link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
   <script defer src="/flexsearch.min.js"></script>
-  <script defer src="/en.search.min.0b91e583ed41c2dac49fa05a42853ad2e5ea48e24d6531669ba739d0df5c8a10.js" integrity="sha256-C5Hlg&#43;1BwtrEn6BaQoU60uXqSOJNZTFmm6c50N9cihA=" crossorigin="anonymous"></script>
+  <script defer src="/en.search.min.87ffd7769bf94576ca903ea3323313199ea201c577fcf84db2d2f7dabd5a595c.js" integrity="sha256-h//Xdpv5RXbKkD6jMjMTGZ6iAcV3/PhNstL32r1aWVw=" crossorigin="anonymous"></script>
 <!--
 Made with Book Theme
 https://github.com/alex-shpak/hugo-book
@@ -61,76 +61,6 @@ https://github.com/alex-shpak/hugo-book
 
   
   <ul>
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <span>数据结构和算法</span>
-  
-
-          
-  <ul>
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">一维</a>
-  
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/" class=" active">二维</a>
-  
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/" class="">特殊</a>
-  
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="https://wxyyrain.github.io/docs/algorithm/mds/algorithm/" class="">算法</a>
-  
-
-        </li>
-      
-    
-  </ul>
-
-        </li>
-      
     
       
         <li>
@@ -205,6 +135,115 @@ https://github.com/alex-shpak/hugo-book
 
   
     <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/architecture/" class="">基础架构</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/questions/" class="">Questions</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/file/" class="">表数据</a>
   
 
         </li>
@@ -357,7 +396,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+    <span>Hbase</span>
   
 
           
@@ -370,7 +409,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/architecture/" class="">基础架构</a>
+    <a href="https://wxyyrain.github.io/docs/hbase/mds/base/" class="">基础</a>
   
 
         </li>
@@ -383,7 +422,38 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+    <a href="https://wxyyrain.github.io/docs/hbase/mds/architecture/" class="">架构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">一维</a>
   
 
         </li>
@@ -396,7 +466,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/" class=" active">二维</a>
   
 
         </li>
@@ -409,7 +479,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/" class="">特殊</a>
   
 
         </li>
@@ -422,33 +492,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
-  
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/questions/" class="">Questions</a>
-  
-
-        </li>
-      
-    
-      
-        <li>
-          
-  
-  
-
-  
-    <a href="https://wxyyrain.github.io/docs/mysql/mds/file/" class="">表数据</a>
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/algorithm/" class="">算法</a>
   
 
         </li>
@@ -484,7 +528,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <span>Redis</span>
+    <a href="https://wxyyrain.github.io/docs/redis/" class="">Redis</a>
   
 
           
@@ -502,7 +546,7 @@ https://github.com/alex-shpak/hugo-book
   
 
   
-    <span>微服务</span>
+    <a href="https://wxyyrain.github.io/docs/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="">微服务</a>
   
 
           
@@ -567,7 +611,11 @@ https://github.com/alex-shpak/hugo-book
   <ul>
     <li><a href="#树tree">树（tree）</a></li>
     <li><a href="#图graph">图（graph）</a></li>
-    <li><a href="#二叉搜索树binary-search-tree">二叉搜索树（binary search tree）</a></li>
+    <li><a href="#二叉搜索树binary-search-tree">二叉搜索树（binary search tree）</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
     <li><a href="#堆heap">堆（heap）</a></li>
     <li><a href="#并查集disjoint-set">并查集（disjoint set）</a></li>
     <li><a href="#字典树trie">字典树（Trie）</a></li>
@@ -595,6 +643,15 @@ https://github.com/alex-shpak/hugo-book
   二叉搜索树（binary search tree）
   <a class="anchor" href="#%e4%ba%8c%e5%8f%89%e6%90%9c%e7%b4%a2%e6%a0%91binary-search-tree">#</a>
 </h2>
+<h4 id="遍历">
+  遍历
+  <a class="anchor" href="#%e9%81%8d%e5%8e%86">#</a>
+</h4>
+<ul>
+<li>前序：根&ndash;左&ndash;右</li>
+<li>中序：左&ndash;根&ndash;右</li>
+<li>后序：左&ndash;右&ndash;根</li>
+</ul>
 <table>
 <thead>
 <tr>
@@ -680,7 +737,11 @@ https://github.com/alex-shpak/hugo-book
   <ul>
     <li><a href="#树tree">树（tree）</a></li>
     <li><a href="#图graph">图（graph）</a></li>
-    <li><a href="#二叉搜索树binary-search-tree">二叉搜索树（binary search tree）</a></li>
+    <li><a href="#二叉搜索树binary-search-tree">二叉搜索树（binary search tree）</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
     <li><a href="#堆heap">堆（heap）</a></li>
     <li><a href="#并查集disjoint-set">并查集（disjoint set）</a></li>
     <li><a href="#字典树trie">字典树（Trie）</a></li>

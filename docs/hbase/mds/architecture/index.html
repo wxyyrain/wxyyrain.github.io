@@ -1,0 +1,797 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Client #  提供了访问HBase的接口，并且维护了对应的cache来加速HBase的访问。
+Zookeeper #  存储HBase的元数据（meta表），无论是读还是写数据，都是去Zookeeper里边拿到meta元数据告诉给客户端去哪台机器读写数据。
+HRegionServer #  处理客户端的读写请求，负责与HDFS底层交互，是真正干活的节点。
+ HBase是分布式的，HBase一张表的数据会分到多台机器上的（通过RowKey切分）。一个HRegionServer可以有多个HRegion。
+ HRegion #  一个HRegion上，存储HBase表的一部分数据。HRegion下面有Store。
+ 一个HBase表首先要定义列族，然后列是在列族之下的，列可以随意添加。一个列族的数据是存储在一起的，所以一个列族的数据是存储在一个Store里边的。
+   Store
+ Store里边有Mem Store、Store File、HFile。
+ HBase在写数据的时候，会先写到Mem Store，当MemStore超过一定阈值，就会将内存中的数据刷写到硬盘上，形成StoreFile，而StoreFile底层是以HFile的格式保存，HFile是HBase中KeyValue数据的存储格式。
+  HLog #  写数据的时候是先写到内存的，为了防止机器宕机，内存的数据没刷到磁盘中就挂了。在写Mem store的时候还会写一份HLog。HLog是顺序写到磁盘的。
+总结 #   HRegionServer是真正干活的机器（用于与hdfs交互），HBase表用RowKey来横向切分表； HRegion里边会有多个Store，每个Store其实就是一个列族的数据（所以可以说HBase是基于列族存储的）； Store里边有Men Store和StoreFile(HFile)，其实就是先走一层内存，然后再刷到磁盘的结构。  读写简流程 #   client请求到Zookeeper，然后Zookeeper返回HRegionServer地址给client，client得到Zookeeper返回的地址去请求HRegionServer，HRegionServer读写数据后返回给client。
+ HMaster #  HMaster会处理 HRegion 的分配或转移。如果我们HRegion的数据量太大的话，HMaster会对拆分后的Region重新分配RegionServer。（如果发现失效的HRegion，也会将失效的HRegion分配到正常的HRegionServer中）
+HMaster会处理元数据的变更和监控RegionServer的状态。">
+<meta name="theme-color" content="#FFFFFF">
+<meta name="color-scheme" content="light dark"><meta property="og:title" content="架构" />
+<meta property="og:description" content="Client #  提供了访问HBase的接口，并且维护了对应的cache来加速HBase的访问。
+Zookeeper #  存储HBase的元数据（meta表），无论是读还是写数据，都是去Zookeeper里边拿到meta元数据告诉给客户端去哪台机器读写数据。
+HRegionServer #  处理客户端的读写请求，负责与HDFS底层交互，是真正干活的节点。
+ HBase是分布式的，HBase一张表的数据会分到多台机器上的（通过RowKey切分）。一个HRegionServer可以有多个HRegion。
+ HRegion #  一个HRegion上，存储HBase表的一部分数据。HRegion下面有Store。
+ 一个HBase表首先要定义列族，然后列是在列族之下的，列可以随意添加。一个列族的数据是存储在一起的，所以一个列族的数据是存储在一个Store里边的。
+   Store
+ Store里边有Mem Store、Store File、HFile。
+ HBase在写数据的时候，会先写到Mem Store，当MemStore超过一定阈值，就会将内存中的数据刷写到硬盘上，形成StoreFile，而StoreFile底层是以HFile的格式保存，HFile是HBase中KeyValue数据的存储格式。
+  HLog #  写数据的时候是先写到内存的，为了防止机器宕机，内存的数据没刷到磁盘中就挂了。在写Mem store的时候还会写一份HLog。HLog是顺序写到磁盘的。
+总结 #   HRegionServer是真正干活的机器（用于与hdfs交互），HBase表用RowKey来横向切分表； HRegion里边会有多个Store，每个Store其实就是一个列族的数据（所以可以说HBase是基于列族存储的）； Store里边有Men Store和StoreFile(HFile)，其实就是先走一层内存，然后再刷到磁盘的结构。  读写简流程 #   client请求到Zookeeper，然后Zookeeper返回HRegionServer地址给client，client得到Zookeeper返回的地址去请求HRegionServer，HRegionServer读写数据后返回给client。
+ HMaster #  HMaster会处理 HRegion 的分配或转移。如果我们HRegion的数据量太大的话，HMaster会对拆分后的Region重新分配RegionServer。（如果发现失效的HRegion，也会将失效的HRegion分配到正常的HRegionServer中）
+HMaster会处理元数据的变更和监控RegionServer的状态。" />
+<meta property="og:type" content="article" />
+<meta property="og:url" content="https://wxyyrain.github.io/docs/hbase/mds/architecture/" /><meta property="article:section" content="docs" />
+<meta property="article:published_time" content="2022-04-03T12:23:26+08:00" />
+<meta property="article:modified_time" content="2022-04-03T12:23:26+08:00" />
+
+<title>架构 | My New Hugo Site</title>
+<link rel="manifest" href="/manifest.json">
+<link rel="icon" href="/favicon.png" type="image/x-icon">
+<link rel="stylesheet" href="/book.min.46181bc93375ba932026e753b37c40e6ff8bb16a9ef770c78bcc663e4577b1ba.css" integrity="sha256-RhgbyTN1upMgJudTs3xA5v&#43;LsWqe93DHi8xmPkV3sbo=" crossorigin="anonymous">
+  <script defer src="/flexsearch.min.js"></script>
+  <script defer src="/en.search.min.87ffd7769bf94576ca903ea3323313199ea201c577fcf84db2d2f7dabd5a595c.js" integrity="sha256-h//Xdpv5RXbKkD6jMjMTGZ6iAcV3/PhNstL32r1aWVw=" crossorigin="anonymous"></script>
+<!--
+Made with Book Theme
+https://github.com/alex-shpak/hugo-book
+-->
+  
+</head>
+<body dir="ltr">
+  <input type="checkbox" class="hidden toggle" id="menu-control" />
+  <input type="checkbox" class="hidden toggle" id="toc-control" />
+  <main class="container flex">
+    <aside class="book-menu">
+      <div class="book-menu-content">
+        
+  <nav>
+<h2 class="book-brand">
+  <a class="flex align-center" href="/"><span>My New Hugo Site</span>
+  </a>
+</h2>
+
+
+<div class="book-search">
+  <input type="text" id="book-search-input" placeholder="Search" aria-label="Search" maxlength="64" data-hotkeys="s/" />
+  <div class="book-search-spinner hidden"></div>
+  <ul id="book-search-results"></ul>
+</div>
+
+
+
+
+
+
+
+
+
+
+
+
+  
+
+
+
+  
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/" class="">分布式数据系统</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_copy/" class="">数据复制</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/data_shard/" class="">数据分区</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/challenge/" class="">分布式系统的挑战</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/distribute/mds/consistency/" class="">一致性与共识</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/" class="">MySQL</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/architecture/" class="">基础架构</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/log/" class="">日志</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/transaction/" class="">事务</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/1_index/" class="">索引</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/lock/" class="">锁</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/questions/" class="">Questions</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/mysql/mds/file/" class="">表数据</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/" class="">Elasticsearch</a>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/0_pre/" class="">前置知识</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/1_basic/" class="">基本使用</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/2_distribute/" class="">分布式原理</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/3_search/" class="">搜索</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/4_aggs/" class="">聚合</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/5_model_design/" class="">数据建模</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/6_scale_out/" class="">水平扩展集群</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/7_cluster_setting/" class="">集群运维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/elasticsearch/mds/8_index_lifecycle/" class="">索引生命周期管理</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>Hbase</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/hbase/mds/base/" class="">基础</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/hbase/mds/architecture/" class=" active">架构</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>数据结构和算法</span>
+  
+
+          
+  <ul>
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/base_data_structure/" class="">一维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_2/" class="">二维</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/data_structure_3/" class="">特殊</a>
+  
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/algorithm/mds/algorithm/" class="">算法</a>
+  
+
+        </li>
+      
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <span>K8s</span>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/redis/" class="">Redis</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+      
+        <li>
+          
+  
+  
+
+  
+    <a href="https://wxyyrain.github.io/docs/%E5%BE%AE%E6%9C%8D%E5%8A%A1/" class="">微服务</a>
+  
+
+          
+  <ul>
+    
+  </ul>
+
+        </li>
+      
+    
+  </ul>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+</nav>
+
+
+
+
+  <script>(function(){var a=document.querySelector("aside .book-menu-content");addEventListener("beforeunload",function(b){localStorage.setItem("menu.scrollTop",a.scrollTop)}),a.scrollTop=localStorage.getItem("menu.scrollTop")})()</script>
+
+
+ 
+      </div>
+    </aside>
+
+    <div class="book-page">
+      <header class="book-header">
+        
+  <div class="flex align-center justify-between">
+  <label for="menu-control">
+    <img src="/svg/menu.svg" class="book-icon" alt="Menu" />
+  </label>
+
+  <strong>架构</strong>
+
+  <label for="toc-control">
+    
+    <img src="/svg/toc.svg" class="book-icon" alt="Table of Contents" />
+    
+  </label>
+</div>
+
+
+  
+  <aside class="hidden clearfix">
+    
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#client">Client</a></li>
+    <li><a href="#zookeeper">Zookeeper</a></li>
+    <li><a href="#hregionserver">HRegionServer</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#读写简流程">读写简流程</a></li>
+    <li><a href="#hmaster">HMaster</a></li>
+  </ul>
+</nav>
+
+
+
+  </aside>
+  
+ 
+      </header>
+
+      
+      
+  <article class="markdown"><p><img src="/images/hbase/hbase.png" alt="image-20220403130430277" /></p>
+<h2 id="client">
+  Client
+  <a class="anchor" href="#client">#</a>
+</h2>
+<p>提供了访问HBase的接口，并且维护了对应的cache来加速HBase的访问。</p>
+<h2 id="zookeeper">
+  Zookeeper
+  <a class="anchor" href="#zookeeper">#</a>
+</h2>
+<p>存储HBase的元数据（meta表），无论是读还是写数据，都是去Zookeeper里边拿到meta元数据告诉给客户端去哪台机器读写数据。</p>
+<h2 id="hregionserver">
+  HRegionServer
+  <a class="anchor" href="#hregionserver">#</a>
+</h2>
+<p>处理客户端的读写请求，负责与HDFS底层交互，是真正干活的节点。</p>
+<blockquote>
+<p>HBase是分布式的，HBase一张表的数据会分到多台机器上的（通过RowKey切分）。一个HRegionServer可以有多个HRegion。</p>
+</blockquote>
+<h4 id="hregion">
+  HRegion
+  <a class="anchor" href="#hregion">#</a>
+</h4>
+<p>一个HRegion上，存储HBase表的一部分数据。HRegion下面有<strong>Store</strong>。</p>
+<blockquote>
+<p>一个HBase表首先要定义<strong>列族</strong>，然后列是在列族之下的，列可以随意添加。一个列族的数据是存储在一起的，所以一个列族的数据是存储在一个Store里边的。</p>
+</blockquote>
+<p><img src="/images/hbase/hregion.png" alt="image-20220403142623071" /></p>
+<ul>
+<li>
+<p>Store</p>
+<blockquote>
+<p>Store里边有<code>Mem Store、Store File、HFile</code>。</p>
+</blockquote>
+<p><img src="/images/hbase/store.png" alt="image-20220403142720628" /></p>
+<p>HBase在写数据的时候，会先写到<code>Mem Store</code>，当<code>MemStore</code>超过一定阈值，就会将内存中的数据刷写到硬盘上，形成<strong>StoreFile</strong>，而<code>StoreFile</code>底层是以<code>HFile</code>的格式保存，<code>HFile</code>是HBase中<code>KeyValue</code>数据的存储格式。</p>
+</li>
+</ul>
+<h4 id="hlog">
+  HLog
+  <a class="anchor" href="#hlog">#</a>
+</h4>
+<p>写数据的时候是先写到内存的，为了防止机器宕机，内存的数据没刷到磁盘中就挂了。在写<code>Mem store</code>的时候还会写一份<code>HLog</code>。<code>HLog</code>是顺序写到磁盘的。</p>
+<h4 id="总结">
+  总结
+  <a class="anchor" href="#%e6%80%bb%e7%bb%93">#</a>
+</h4>
+<ol>
+<li>HRegionServer是真正干活的机器（用于与hdfs交互），HBase表用RowKey来横向切分表；</li>
+<li>HRegion里边会有多个Store，每个Store其实就是一个列族的数据（所以可以说HBase是基于列族存储的）；</li>
+<li>Store里边有Men Store和StoreFile(HFile)，其实就是先走一层内存，然后再刷到磁盘的结构。</li>
+</ol>
+<h2 id="读写简流程">
+  读写简流程
+  <a class="anchor" href="#%e8%af%bb%e5%86%99%e7%ae%80%e6%b5%81%e7%a8%8b">#</a>
+</h2>
+<blockquote>
+<p>client请求到Zookeeper，然后Zookeeper返回HRegionServer地址给client，client得到Zookeeper返回的地址去请求HRegionServer，HRegionServer读写数据后返回给client。</p>
+</blockquote>
+<p><img src="/images/hbase/process.png" alt="image-20220403144515324" /></p>
+<h2 id="hmaster">
+  HMaster
+  <a class="anchor" href="#hmaster">#</a>
+</h2>
+<p>HMaster会处理 HRegion 的分配或转移。如果我们HRegion的数据量太大的话，HMaster会对拆分后的Region重新分配RegionServer。（如果发现失效的HRegion，也会将失效的HRegion分配到正常的HRegionServer中）</p>
+<p>HMaster会处理元数据的变更和监控RegionServer的状态。</p>
+</article>
+ 
+      
+
+      <footer class="book-footer">
+        
+  <div class="flex flex-wrap justify-between">
+
+
+
+
+
+</div>
+
+
+
+  <script>(function(){function a(c){const a=window.getSelection(),b=document.createRange();b.selectNodeContents(c),a.removeAllRanges(),a.addRange(b)}document.querySelectorAll("pre code").forEach(b=>{b.addEventListener("click",function(c){a(b.parentElement),navigator.clipboard&&navigator.clipboard.writeText(b.parentElement.textContent)})})})()</script>
+
+
+ 
+        
+      </footer>
+
+      
+  
+  <div class="book-comments">
+
+</div>
+  
+ 
+
+      <label for="menu-control" class="hidden book-menu-overlay"></label>
+    </div>
+
+    
+    <aside class="book-toc">
+      <div class="book-toc-content">
+        
+  
+<nav id="TableOfContents">
+  <ul>
+    <li><a href="#client">Client</a></li>
+    <li><a href="#zookeeper">Zookeeper</a></li>
+    <li><a href="#hregionserver">HRegionServer</a>
+      <ul>
+        <li></li>
+      </ul>
+    </li>
+    <li><a href="#读写简流程">读写简流程</a></li>
+    <li><a href="#hmaster">HMaster</a></li>
+  </ul>
+</nav>
+
+
+ 
+      </div>
+    </aside>
+    
+  </main>
+
+  
+</body>
+</html>
+
+
+
+
+
+
+
+
+
+
+
+
